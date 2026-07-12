@@ -1,0 +1,20 @@
+# Base de datos
+*.db
+
+# Configuración sensible
+.env
+*.key
+*.pem
+
+# Binarios
+korzadivpn
+
+# Logs
+*.log
+
+# Archivos temporales
+error.txt
+
+# Archivos de respaldo
+*_respaldo.txt
+*.backup*
