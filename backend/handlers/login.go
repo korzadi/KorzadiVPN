@@ -26,11 +26,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var loginUser models.User
+	var creds models.Credentials
 
 	err := json.NewDecoder(
 		r.Body,
-	).Decode(&loginUser)
+	).Decode(&creds)
 
 	if err != nil {
 
@@ -43,12 +43,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser.Email = strings.TrimSpace(
-		loginUser.Email,
+	creds.Email = strings.TrimSpace(
+		creds.Email,
 	)
 
 	user, err := database.GetUser(
-		loginUser.Email,
+		creds.Email,
 	)
 
 	if err != nil {
@@ -64,7 +64,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
-		[]byte(loginUser.Password),
+		[]byte(creds.Password),
 	)
 
 	if err != nil {

@@ -23,9 +23,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
+	var creds models.Credentials
 
-	err := json.NewDecoder(r.Body).Decode(&user)
+	err := json.NewDecoder(r.Body).Decode(&creds)
 
 	if err != nil {
 		http.Error(
@@ -36,9 +36,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Email = strings.TrimSpace(user.Email)
+	creds.Email = strings.TrimSpace(creds.Email)
 
-	if user.Email == "" || user.Password == "" {
+	if creds.Email == "" || creds.Password == "" {
 
 		http.Error(
 			w,
@@ -50,7 +50,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hash, err := bcrypt.GenerateFromPassword(
-		[]byte(user.Password),
+		[]byte(creds.Password),
 		bcrypt.DefaultCost,
 	)
 
@@ -65,10 +65,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var user models.User
+
+	user.Email = creds.Email
 	user.Password = string(hash)
-
 	user.Plan = "free"
-
 	user.Status = "active"
 
 	err = database.CreateUser(user)

@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+/* ============================================
+   KorzadiVPN — Cyberpunk Theme
+   Paleta: void #07070d · panel #0f0f1a · violeta #b026ff
+           cian #00f0ff · acido #39ff14 · hot #ff2965
+   Firma visual: "signal ring" pulsante en indicadores
+   de estado + textura de scanlines de fondo.
+   ============================================ */
+
+.cyber-page {
+  --void: #07070d;
+  --panel: #0f0f1a;
+  --panel-2: #161625;
+  --violet: #b026ff;
+  --cyan: #00f0ff;
+  --acid: #39ff14;
+  --hot: #ff2965;
+  --fog: #8a8fa3;
+
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(176,38,255,0.12), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 100% 100%, rgba(0,240,255,0.06), transparent 60%),
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+    var(--void);
+  color: #e4e6f0;
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 48px 20px 80px;
+}
+
+.cyber-page * { box-sizing: border-box; }
+
+.cyber-shell { max-width: 1040px; margin: 0 auto; }
+
+.cyber-h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 12px var(--violet), 0 0 36px rgba(176,38,255,0.35);
+  margin: 0 0 6px;
+  font-size: 28px;
+}
+
+.cyber-sub {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fog);
+  font-size: 13px;
+  letter-spacing: .5px;
+  margin: 0 0 32px;
+}
+
+.cyber-mono { font-family: 'JetBrains Mono', monospace; }
+
+.cyber-card {
+  background: var(--panel);
+  border: 1px solid rgba(176,38,255,0.22);
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 8px 30px rgba(0,0,0,0.5);
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.cyber-card:hover {
+  border-color: rgba(176,38,255,0.55);
+  box-shadow: 0 0 26px rgba(176,38,255,0.15);
+}
+
+.cyber-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fog);
+  margin: 0 0 6px;
+}
+
+.cyber-input {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.cyber-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,240,255,0.15);
+}
+.cyber-input::placeholder { color: #565a6e; }
+
+.cyber-btn {
+  padding: 13px 20px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 12px;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--violet), #7c1fd6);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(176,38,255,0.35);
+  transition: transform .12s, box-shadow .12s, opacity .12s;
+}
+.cyber-btn:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(176,38,255,0.55); }
+.cyber-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.cyber-btn.full { width: 100%; }
+.cyber-btn.ghost {
+  background: transparent;
+  border: 1px solid var(--cyan);
+  box-shadow: none;
+  color: var(--cyan);
+}
+.cyber-btn.ghost:hover { box-shadow: 0 0 16px rgba(0,240,255,0.35); }
+.cyber-btn.danger {
+  background: linear-gradient(90deg, var(--hot), #a10f3d);
+  box-shadow: 0 0 20px rgba(255,41,101,0.3);
+}
+
+.signal { display: inline-block; width: 9px; height: 9px; border-radius: 50%; position: relative; flex-shrink: 0; }
+.signal.online { background: var(--acid); box-shadow: 0 0 8px var(--acid); }
+.signal.online::after {
+  content: ""; position: absolute; inset: -5px; border-radius: 50%;
+  border: 1px solid var(--acid); animation: signal-pulse 1.6s ease-out infinite;
+}
+.signal.offline { background: var(--hot); box-shadow: 0 0 8px var(--hot); }
+
+@keyframes signal-pulse {
+  0% { transform: scale(0.6); opacity: .9; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.cyber-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.cyber-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid;
+  letter-spacing: .5px;
+  display: inline-block;
+}
+.cyber-badge.violet { color: var(--violet); border-color: rgba(176,38,255,0.5); background: rgba(176,38,255,0.08); }
+.cyber-badge.cyan { color: var(--cyan); border-color: rgba(0,240,255,0.5); background: rgba(0,240,255,0.08); }
+.cyber-badge.acid { color: var(--acid); border-color: rgba(57,255,20,0.5); background: rgba(57,255,20,0.08); }
+
+.cyber-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.cyber-row:last-child { border-bottom: none; }
+
+.cyber-empty {
+  text-align: center; padding: 60px 20px; color: var(--fog);
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+}
+
+.cyber-back {
+  display: inline-block; margin-bottom: 24px; color: var(--fog);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  text-decoration: none; cursor: pointer; background: none; border: none;
+}
+.cyber-back:hover { color: var(--cyan); }
