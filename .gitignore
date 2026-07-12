@@ -1,0 +1,96 @@
+# Binarios y ejecutables
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+korzadivpn
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+.env.local
+.env.*.local
+
+# Go
+*.o
+*.a
+*.so
+bin/
+vendor/
+go.sum
+
+# Bases de datos
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Archivos de configuración local
+.env
+.env.local
+.env.*.local
+*.conf.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Android
+.gradle/
+.android/
+local.properties
+*.apk
+*.aar
+*.ap_
+*.aab
+build/
+.externalNativeBuild/
+
+# Logs y temporales
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+error.txt
+
+# Archivos de respaldo
+*_respaldo.txt
+*.bak
+*.backup
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+.directory
+
+# Carpetas de caché
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# Testing
+coverage/
+.coverage
+htmlcov/
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.crt
