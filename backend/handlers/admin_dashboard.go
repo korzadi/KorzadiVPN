@@ -7,47 +7,37 @@ import (
 	"korzadivpn/database"
 )
 
+func AdminDashboard(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
-func AdminDashboard(w http.ResponseWriter, r *http.Request) {
+	stats, err :=
+		database.GetAdminStats()
 
+	if err != nil {
 
-	totalUsers, _ := database.CountUsers()
+		http.Error(
+			w,
+			"Error obteniendo estadísticas",
+			http.StatusInternalServerError,
+		)
 
-	activeUsers, _ := database.CountActiveUsers()
+		return
+	}
 
-	activeConnections, _ := database.CountAllActiveConnections()
-
-	totalServers, _ := database.CountServers()
-
-	onlineServers, _ := database.CountOnlineServers()
-
-	activity, _ := database.GetActivity()
-
-
+	activity, _ :=
+		database.GetActivity()
 
 	w.Header().Set(
 		"Content-Type",
 		"application/json",
 	)
 
-
-
 	json.NewEncoder(w).Encode(
 		map[string]interface{}{
 
-			"users": map[string]interface{}{
-				"total": totalUsers,
-				"active": activeUsers,
-			},
-
-			"servers": map[string]interface{}{
-				"total": totalServers,
-				"online": onlineServers,
-			},
-
-			"connections": map[string]interface{}{
-				"active": activeConnections,
-			},
+			"statistics": stats,
 
 			"activity": activity,
 		},

@@ -9,6 +9,12 @@ import (
 
 func RegisterRoutes() {
 
+	http.HandleFunc("/api/admin/nodes", handlers.ListVPNNodes)
+
+	http.HandleFunc("/api/admin/nodes/create", handlers.CreateVPNNode)
+
+	http.HandleFunc("/api/vpn/connect", handlers.StartVPNConnection)
+
 	http.HandleFunc(
 		"/status",
 		handlers.Status,
@@ -54,7 +60,6 @@ func RegisterRoutes() {
 		),
 	)
 
-
 	// SERVIDORES
 
 	http.HandleFunc(
@@ -83,7 +88,6 @@ func RegisterRoutes() {
 			handlers.ChangePlan,
 		),
 	)
-
 
 	// VPN
 
@@ -131,6 +135,12 @@ func RegisterRoutes() {
 		),
 	)
 
+	http.HandleFunc(
+		"/api/vpn/config",
+		middleware.Auth(
+			handlers.CreateVPNConfig,
+		),
+	)
 
 	// ADMIN
 

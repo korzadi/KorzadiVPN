@@ -1,22 +1,27 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"korzadivpn/database"
 	"korzadivpn/middleware"
+	"korzadivpn/models"
 )
 
 func DeleteDevice(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodDelete {
+
 		http.Error(
 			w,
 			"Metodo no permitido",
 			http.StatusMethodNotAllowed,
 		)
+
 		return
 	}
 
@@ -24,11 +29,13 @@ func DeleteDevice(w http.ResponseWriter, r *http.Request) {
 		Value(middleware.UserEmailKey).(string)
 
 	if !ok {
+
 		http.Error(
 			w,
 			"Usuario no autenticado",
 			http.StatusUnauthorized,
 		)
+
 		return
 	}
 
@@ -40,11 +47,48 @@ func DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(idText)
 
 	if err != nil {
+
 		http.Error(
 			w,
 			"ID invalido",
 			http.StatusBadRequest,
 		)
+
+		return
+	}
+
+	devices, err := database.GetDevicesByEmail(email)
+
+	if err != nil {
+
+		http.Error(
+			w,
+			"Error buscando dispositivos",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	var device *models.Device
+
+	for i := range devices {
+
+		if devices[i].ID == id {
+
+			device = &devices[i]
+			break
+		}
+	}
+
+	if device == nil {
+
+		http.Error(
+			w,
+			"Dispositivo no encontrado",
+			http.StatusNotFound,
+		)
+
 		return
 	}
 
@@ -54,20 +98,48 @@ func DeleteDevice(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
+
 		http.Error(
 			w,
 			"Error eliminando dispositivo",
 			http.StatusInternalServerError,
 		)
+
 		return
 	}
 
-	w.Header().Set(
-		"Content-Type",
-		"application/json",
+	database.CreateActivity(
+		models.Activity{
+
+			Email: email,
+
+			Server: device.LastServer,
+
+			Action: "device_deleted",
+
+			Device: device.DeviceName,
+
+			IP: device.LastIP,
+
+			CreatedAt: time.Now().
+				UTC().
+				Format(time.RFC3339),
+		},
 	)
 
-	w.Write([]byte(`{
-		"message":"Dispositivo eliminado correctamente"
-	}`))
+	w.Header().
+		Set(
+			"Content-Type",
+			"application/json",
+		)
+
+	json.NewEncoder(w).Encode(
+		map[string]interface{}{
+
+			"message": "Dispositivo eliminado correctamente",
+
+			"device": device.DeviceName,
+		},
+	)
+
 }

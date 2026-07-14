@@ -7,21 +7,25 @@ import (
 	"korzadivpn/database"
 )
 
-// AdminUsers muestra todos los usuarios.
-func AdminUsers(w http.ResponseWriter, r *http.Request) {
+// AdminUsers muestra usuarios del sistema.
+func AdminUsers(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
 	if r.Method != http.MethodGet {
 
 		http.Error(
 			w,
-			"Método no permitido",
+			"Metodo no permitido",
 			http.StatusMethodNotAllowed,
 		)
 
 		return
 	}
 
-	users, err := database.GetUsers()
+	users, err :=
+		database.GetUsers()
 
 	if err != nil {
 

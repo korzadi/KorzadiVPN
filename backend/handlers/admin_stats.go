@@ -1,6 +1,5 @@
 package handlers
 
-
 import (
 	"encoding/json"
 	"net/http"
@@ -8,9 +7,7 @@ import (
 	"korzadivpn/database"
 )
 
-
 func AdminStats(w http.ResponseWriter, r *http.Request) {
-
 
 	if r.Method != http.MethodGet {
 
@@ -23,9 +20,7 @@ func AdminStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	stats, err := database.GetAdminStats()
-
 
 	if err != nil {
 
@@ -38,12 +33,10 @@ func AdminStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	w.Header().Set(
 		"Content-Type",
 		"application/json",
 	)
-
 
 	json.NewEncoder(w).Encode(
 		stats,

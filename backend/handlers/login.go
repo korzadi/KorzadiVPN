@@ -93,6 +93,33 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	now := time.Now().UTC()
+
+	database.CreateSession(
+		models.Session{
+
+			Email: user.Email,
+
+			Token: token,
+
+			IP: r.RemoteAddr,
+
+			Device: r.UserAgent(),
+
+			CreatedAt: now.Format(
+				time.RFC3339,
+			),
+
+			ExpiresAt: now.Add(
+				time.Hour * 24,
+			).Format(
+				time.RFC3339,
+			),
+
+			Status: "active",
+		},
+	)
+
 	database.CreateActivity(
 		models.Activity{
 
@@ -102,7 +129,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 			IP: r.RemoteAddr,
 
-			CreatedAt: time.Now().UTC().Format(time.RFC3339),
+			CreatedAt: now.Format(
+				time.RFC3339,
+			),
 		},
 	)
 
@@ -123,5 +152,4 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			"status": user.Status,
 		},
 	)
-
 }

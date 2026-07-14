@@ -8,7 +8,7 @@ import (
 	"korzadivpn/middleware"
 )
 
-// MyDevices devuelve las conexiones del usuario autenticado.
+// MyDevices devuelve los dispositivos reales del usuario.
 func MyDevices(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
@@ -36,7 +36,7 @@ func MyDevices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	devices, err := database.GetConnectionsByEmail(email)
+	devices, err := database.GetDevicesByEmail(email)
 
 	if err != nil {
 
@@ -54,6 +54,10 @@ func MyDevices(w http.ResponseWriter, r *http.Request) {
 		"application/json",
 	)
 
-	json.NewEncoder(w).Encode(devices)
-
+	json.NewEncoder(w).Encode(
+		map[string]interface{}{
+			"devices": devices,
+			"total":   len(devices),
+		},
+	)
 }

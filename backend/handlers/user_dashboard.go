@@ -9,8 +9,10 @@ import (
 	"korzadivpn/models"
 )
 
-// UserDashboard muestra información del usuario.
-func UserDashboard(w http.ResponseWriter, r *http.Request) {
+func UserDashboard(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
 	email, ok := r.Context().
 		Value(middleware.UserEmailKey).(string)
@@ -39,15 +41,49 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	connection, _ := database.GetActiveConnection(email)
+	connection, _ :=
+		database.GetActiveConnection(email)
 
-	activities, _ := database.GetActivityByEmail(email)
+	history, _ :=
+		database.GetConnectionsByEmail(email)
 
-	devicesUsed, _ := database.CountActiveConnections(email)
+	activities, _ :=
+		database.GetActivityByEmail(email)
 
-	deviceLimit := models.GetDeviceLimit(
-		user.Plan,
-	)
+	sessions, _ :=
+		database.GetActiveSessionsByEmail(email)
+
+	devicesUsed, _ :=
+		database.CountActiveConnections(email)
+
+	deviceLimit :=
+		models.GetDeviceLimit(
+			user.Plan,
+		)
+
+	totalConnections, _ :=
+		database.CountUserConnections(email)
+
+	totalDevices, _ :=
+		database.CountUserDevices(email)
+
+	lastConnection, _ :=
+		database.GetLastConnection(email)
+
+	mostUsedServer, _ :=
+		database.GetMostUsedServer(email)
+
+	totalDisconnects, _ :=
+		database.CountUserDisconnects(email)
+
+	activeConnections, _ :=
+		database.CountUserActiveConnections(email)
+
+	lastDevice, _ :=
+		database.GetLastDevice(email)
+
+	connectionRecords, _ :=
+		database.GetTotalConnectionTime(email)
 
 	w.Header().Set(
 		"Content-Type",
@@ -69,6 +105,32 @@ func UserDashboard(w http.ResponseWriter, r *http.Request) {
 			},
 
 			"vpn": connection,
+
+			"statistics": map[string]interface{}{
+
+				"total_connections": totalConnections,
+
+				"active_connections": activeConnections,
+
+				"total_disconnects": totalDisconnects,
+
+				"total_devices": totalDevices,
+
+				"last_connection": lastConnection,
+
+				"last_device": lastDevice,
+
+				"most_used_server": mostUsedServer,
+
+				"connection_records": connectionRecords,
+			},
+
+			"sessions": map[string]interface{}{
+
+				"active": sessions,
+			},
+
+			"history": history,
 
 			"activity": activities,
 		},

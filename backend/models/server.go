@@ -27,5 +27,8 @@ type Server struct {
 
 	ServerPublicKey string `json:"server_public_key"`
 
+	// Nunca se envía al frontend
+	ServerPrivateKey string `json:"-"`
+
 	DNS string `json:"dns"`
 }

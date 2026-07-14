@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"korzadivpn/database"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -14,9 +16,14 @@ var UserEmailKey ContextKey = "userEmail"
 
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(
+		w http.ResponseWriter,
+		r *http.Request,
+	) {
 
-		authHeader := r.Header.Get("Authorization")
+		authHeader := r.Header.Get(
+			"Authorization",
+		)
 
 		if authHeader == "" {
 
@@ -36,7 +43,9 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 
 		token, err := jwt.Parse(
 			tokenString,
-			func(token *jwt.Token) (interface{}, error) {
+			func(
+				token *jwt.Token,
+			) (interface{}, error) {
 
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 
@@ -51,33 +60,22 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 
 			http.Error(
 				w,
-				"Token inválido",
+				"Token invalido",
 				http.StatusUnauthorized,
 			)
 
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
+		session, err := database.GetActiveSession(
+			tokenString,
+		)
 
-		if !ok {
-
-			http.Error(
-				w,
-				"Claims inválidos",
-				http.StatusUnauthorized,
-			)
-
-			return
-		}
-
-		emailValue, ok := claims["email"].(string)
-
-		if !ok || emailValue == "" {
+		if err != nil || session == nil {
 
 			http.Error(
 				w,
-				"Email inválido en token",
+				"Sesion no activa",
 				http.StatusUnauthorized,
 			)
 
@@ -87,14 +85,12 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(
 			r.Context(),
 			UserEmailKey,
-			emailValue,
+			session.Email,
 		)
 
 		next(
 			w,
 			r.WithContext(ctx),
 		)
-
 	}
-
 }

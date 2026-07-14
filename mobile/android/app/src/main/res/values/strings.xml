@@ -1,0 +1,9 @@
+<resources>
+
+<string name="app_name">KorzadiVPN</string>
+
+<string name="connect">Conectar</string>
+
+<string name="disconnect">Desconectar</string>
+
+</resources>

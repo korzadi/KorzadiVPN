@@ -1,18 +1,27 @@
 package database
 
-import (
-	"korzadivpn/models"
-)
+type AdminUser struct {
+	Email string `json:"email"`
 
-// GetUsers obtiene usuarios sin mostrar contraseñas.
-func GetUsers() ([]models.User, error) {
+	Plan string `json:"plan"`
+
+	Status string `json:"status"`
+
+	Devices int `json:"devices"`
+
+	Connections int `json:"connections"`
+}
+
+// GetUsers obtiene usuarios para administración.
+func GetUsers() ([]AdminUser, error) {
 
 	rows, err := DB.Query(`
-		SELECT
+	SELECT
 		email,
 		plan,
 		status
-		FROM users
+	FROM users
+	ORDER BY email
 	`)
 
 	if err != nil {
@@ -21,11 +30,11 @@ func GetUsers() ([]models.User, error) {
 
 	defer rows.Close()
 
-	var users []models.User
+	var users []AdminUser
 
 	for rows.Next() {
 
-		var user models.User
+		var user AdminUser
 
 		err := rows.Scan(
 			&user.Email,
@@ -36,6 +45,26 @@ func GetUsers() ([]models.User, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		DB.QueryRow(`
+		SELECT COUNT(*)
+		FROM devices
+		WHERE email=?
+		`,
+			user.Email,
+		).Scan(
+			&user.Devices,
+		)
+
+		DB.QueryRow(`
+		SELECT COUNT(*)
+		FROM connections
+		WHERE email=?
+		`,
+			user.Email,
+		).Scan(
+			&user.Connections,
+		)
 
 		users = append(
 			users,

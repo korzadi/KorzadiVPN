@@ -8,19 +8,21 @@ import (
 )
 
 // AdminConnections muestra conexiones activas.
-func AdminConnections(w http.ResponseWriter, r *http.Request) {
+func AdminConnections(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
 	if r.Method != http.MethodGet {
 
 		http.Error(
 			w,
-			"Método no permitido",
+			"Metodo no permitido",
 			http.StatusMethodNotAllowed,
 		)
 
 		return
 	}
-
 
 	connections, err := database.GetAllActiveConnections()
 
@@ -28,28 +30,22 @@ func AdminConnections(w http.ResponseWriter, r *http.Request) {
 
 		http.Error(
 			w,
-			"Error obteniendo conexiones",
+			err.Error(),
 			http.StatusInternalServerError,
 		)
 
 		return
 	}
 
-
 	w.Header().Set(
 		"Content-Type",
 		"application/json",
 	)
 
-
 	json.NewEncoder(w).Encode(
 		map[string]interface{}{
-
-			"total": len(connections),
-
+			"total":       len(connections),
 			"connections": connections,
-
 		},
 	)
-
 }

@@ -7,7 +7,7 @@ import (
 	"korzadivpn/database"
 )
 
-// AdminActivity muestra historial de actividad.
+// AdminActivity muestra historial y estadísticas de actividad.
 func AdminActivity(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
@@ -34,6 +34,18 @@ func AdminActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	total, _ := database.CountActivities()
+
+	connects, _ := database.CountActivityByAction(
+		"connected",
+	)
+
+	disconnects, _ := database.CountActivityByAction(
+		"disconnected",
+	)
+
+	lastActivity, _ := database.GetLastActivity()
+
 	w.Header().Set(
 		"Content-Type",
 		"application/json",
@@ -42,9 +54,21 @@ func AdminActivity(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(
 		map[string]interface{}{
 
+			"statistics": map[string]interface{}{
+
+				"total_events": total,
+
+				"total_connections": connects,
+
+				"total_disconnects": disconnects,
+
+				"last_activity": lastActivity,
+			},
+
 			"total": len(activities),
 
 			"activities": activities,
 		},
 	)
+
 }

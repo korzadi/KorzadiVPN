@@ -20,11 +20,9 @@ func DownloadVPNProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	email, ok := r.Context().Value(
 		middleware.UserEmailKey,
 	).(string)
-
 
 	if !ok {
 
@@ -37,9 +35,7 @@ func DownloadVPNProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	profile, err := database.GetVPNProfile(email)
-
 
 	if err != nil {
 
@@ -52,9 +48,7 @@ func DownloadVPNProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	filename := "KorzadiVPN-" + profile.Server + ".conf"
-
 
 	w.Header().Set(
 		"Content-Disposition",
@@ -70,7 +64,6 @@ func DownloadVPNProfile(w http.ResponseWriter, r *http.Request) {
 		"Cache-Control",
 		"no-store",
 	)
-
 
 	w.Write([]byte(profile.Config))
 

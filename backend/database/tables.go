@@ -56,11 +56,25 @@ func CreateTables() {
 	);
 	`
 
+	sessions := `
+	CREATE TABLE IF NOT EXISTS sessions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		email TEXT,
+		token TEXT UNIQUE,
+		ip TEXT,
+		device TEXT,
+		created_at TEXT,
+		expires_at TEXT,
+		status TEXT
+	);
+	`
+
 	queries := []string{
 		users,
 		servers,
 		connections,
 		vpnProfiles,
+		sessions,
 	}
 
 	for _, query := range queries {
@@ -68,9 +82,7 @@ func CreateTables() {
 		_, err := DB.Exec(query)
 
 		if err != nil {
-
 			log.Fatal(err)
-
 		}
 	}
 

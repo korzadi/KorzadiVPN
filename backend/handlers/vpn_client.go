@@ -11,44 +11,124 @@ import (
 	"korzadivpn/utils"
 )
 
-func CreateVPNClient(w http.ResponseWriter, r *http.Request) {
+func CreateVPNClient(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
 	if r.Method != http.MethodPost {
-		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+
+		http.Error(
+			w,
+			"Metodo no permitido",
+			http.StatusMethodNotAllowed,
+		)
+
 		return
 	}
 
-	email, ok := r.Context().
-		Value(middleware.UserEmailKey).(string)
+	email, ok :=
+		r.Context().
+			Value(middleware.UserEmailKey).(string)
 
 	if !ok {
-		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+
+		http.Error(
+			w,
+			"Usuario no autenticado",
+			http.StatusUnauthorized,
+		)
+
 		return
 	}
 
-	publicKey, privateKey := utils.GenerateWireGuardKeys()
+	server, err :=
+		database.GetBestServer()
+
+	if err != nil {
+
+		http.Error(
+			w,
+			"No hay servidores disponibles",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	clientIP, err :=
+		database.GetNextVPNClientIP()
+
+	if err != nil {
+
+		http.Error(
+			w,
+			"No hay IP disponible",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	publicKey, privateKey :=
+		utils.GenerateWireGuardKeys()
+
+	now :=
+		time.Now().
+			UTC().
+			Format(time.RFC3339)
 
 	client := models.VPNClient{
 
 		Email: email,
 
-		ServerID: 1,
+		ServerID: server.ID,
+
+		NodeID: server.ID,
 
 		ClientName: "Korzadi-Device",
 
-		ClientIP: "10.0.0.2",
+		DeviceName: "Korzadi Device",
+
+		DeviceType: "WireGuard",
+
+		ClientIP: clientIP,
 
 		PublicKey: publicKey,
 
 		PrivateKey: privateKey,
 
+		Protocol: "wireguard",
+
+		DNS: "1.1.1.1",
+
+		MTU: 1420,
+
+		AllowedIPs: "0.0.0.0/0, ::/0",
+
+		Endpoint: server.Name,
+
 		Status: "active",
 
-		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		ConnectionStatus: "offline",
+
+		Plan: "free",
+
+		BandwidthLimit: 0,
+
+		DataUsed: 0,
+
+		MaxDevices: 1,
+
+		CreatedAt: now,
+
+		UpdatedAt: now,
 	}
 
-
-	err := database.CreateVPNClient(client)
+	err =
+		database.CreateVPNClient(
+			client,
+		)
 
 	if err != nil {
 
@@ -61,15 +141,59 @@ func CreateVPNClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	database.IncrementServerUsers(
+		server.ID,
+	)
+
+	device := models.Device{
+
+		Email: email,
+
+		DeviceName: client.DeviceName,
+
+		DeviceType: client.DeviceType,
+
+		Status: "active",
+
+		LastServer: server.Name,
+
+		LastSeen: now,
+
+		CreatedAt: now,
+	}
+
+	err =
+		database.UpsertDevice(
+			device,
+		)
+
+	if err != nil {
+
+		http.Error(
+			w,
+			"Error registrando dispositivo",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
 
 	w.Header().Set(
 		"Content-Type",
 		"application/json",
 	)
 
-
 	json.NewEncoder(w).Encode(
-		client,
+		map[string]interface{}{
+
+			"message": "Cliente VPN creado correctamente",
+
+			"client": client,
+
+			"server": server,
+
+			"device": device,
+		},
 	)
 
 }

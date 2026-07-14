@@ -1,0 +1,18 @@
+KorzadiVPN Android
+
+Completado:
+
+[OK] Estructura APK
+[OK] Config API
+[OK] Gestor VPN
+[OK] UI base
+[OK] Login base
+[OK] Lista servidores
+[OK] Perfil WireGuard base
+[OK] Cliente API base
+
+Pendiente:
+
+- Cliente HTTP real
+- SDK WireGuard oficial
+- APK Release firmado

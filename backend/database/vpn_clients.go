@@ -12,86 +12,173 @@ func CreateVPNClient(client models.VPNClient) error {
 		(
 			email,
 			server_id,
+			node_id,
 			client_name,
+			device_id,
+			device_name,
+			device_type,
 			client_ip,
+			ipv6,
 			public_key,
 			private_key,
+			preshared_key,
+			config,
+			protocol,
+			dns,
+			mtu,
+			allowed_ips,
+			endpoint,
 			status,
-			created_at
+			connection_status,
+			plan,
+			bandwidth_limit,
+			data_used,
+			max_devices,
+			last_handshake,
+			last_connected,
+			last_disconnected,
+			last_ip,
+			country,
+			city,
+			expires_at,
+			revoked_at,
+			created_at,
+			updated_at
 		)
-		VALUES (?,?,?,?,?,?,?,?)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		`,
 		client.Email,
 		client.ServerID,
+		client.NodeID,
 		client.ClientName,
+		client.DeviceID,
+		client.DeviceName,
+		client.DeviceType,
 		client.ClientIP,
+		client.IPv6,
 		client.PublicKey,
 		client.PrivateKey,
+		client.PresharedKey,
+		client.Config,
+		client.Protocol,
+		client.DNS,
+		client.MTU,
+		client.AllowedIPs,
+		client.Endpoint,
 		client.Status,
+		client.ConnectionStatus,
+		client.Plan,
+		client.BandwidthLimit,
+		client.DataUsed,
+		client.MaxDevices,
+		client.LastHandshake,
+		client.LastConnected,
+		client.LastDisconnected,
+		client.LastIP,
+		client.Country,
+		client.City,
+		client.ExpiresAt,
+		client.RevokedAt,
 		client.CreatedAt,
+		client.UpdatedAt,
 	)
 
 	return err
 }
 
+func GetVPNClientByEmail(email string) (*models.VPNClient, error) {
 
-func GetVPNClientsByEmail(email string) ([]models.VPNClient, error) {
-
-	rows, err := DB.Query(
+	row := DB.QueryRow(
 		`
 		SELECT
 			id,
 			email,
 			server_id,
+			node_id,
 			client_name,
+			device_id,
+			device_name,
+			device_type,
 			client_ip,
+			ipv6,
 			public_key,
 			private_key,
+			preshared_key,
+			config,
+			protocol,
+			dns,
+			mtu,
+			allowed_ips,
+			endpoint,
 			status,
-			created_at
+			connection_status,
+			plan,
+			bandwidth_limit,
+			data_used,
+			max_devices,
+			last_handshake,
+			last_connected,
+			last_disconnected,
+			last_ip,
+			country,
+			city,
+			expires_at,
+			revoked_at,
+			created_at,
+			updated_at
 		FROM vpn_clients
 		WHERE email=?
+		LIMIT 1
 		`,
 		email,
+	)
+
+	var client models.VPNClient
+
+	err := row.Scan(
+		&client.ID,
+		&client.Email,
+		&client.ServerID,
+		&client.NodeID,
+		&client.ClientName,
+		&client.DeviceID,
+		&client.DeviceName,
+		&client.DeviceType,
+		&client.ClientIP,
+		&client.IPv6,
+		&client.PublicKey,
+		&client.PrivateKey,
+		&client.PresharedKey,
+		&client.Config,
+		&client.Protocol,
+		&client.DNS,
+		&client.MTU,
+		&client.AllowedIPs,
+		&client.Endpoint,
+		&client.Status,
+		&client.ConnectionStatus,
+		&client.Plan,
+		&client.BandwidthLimit,
+		&client.DataUsed,
+		&client.MaxDevices,
+		&client.LastHandshake,
+		&client.LastConnected,
+		&client.LastDisconnected,
+		&client.LastIP,
+		&client.Country,
+		&client.City,
+		&client.ExpiresAt,
+		&client.RevokedAt,
+		&client.CreatedAt,
+		&client.UpdatedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	var clients []models.VPNClient
-
-	for rows.Next() {
-
-		var client models.VPNClient
-
-		err := rows.Scan(
-			&client.ID,
-			&client.Email,
-			&client.ServerID,
-			&client.ClientName,
-			&client.ClientIP,
-			&client.PublicKey,
-			&client.PrivateKey,
-			&client.Status,
-			&client.CreatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		clients = append(
-			clients,
-			client,
-		)
-	}
-
-	return clients, nil
+	return &client, nil
 }
-
 
 func DeleteVPNClient(id int, email string) error {
 
@@ -107,45 +194,22 @@ func DeleteVPNClient(id int, email string) error {
 	return err
 }
 
+func UpdateVPNClientConfig(
+	id int,
+	config string,
+) error {
 
-func GetVPNClientByEmail(email string) (*models.VPNClient, error) {
+	_, err := DB.Exec(
+		`
+		UPDATE vpn_clients
+		SET
+			config=?,
+			updated_at=datetime('now')
+		WHERE id=?
+		`,
+		config,
+		id,
+	)
 
-        row := DB.QueryRow(
-                `
-                SELECT
-                        id,
-                        email,
-                        server_id,
-                        client_name,
-                        client_ip,
-                        public_key,
-                        private_key,
-                        status,
-                        created_at
-                FROM vpn_clients
-                WHERE email=?
-                LIMIT 1
-                `,
-                email,
-        )
-
-        var client models.VPNClient
-
-        err := row.Scan(
-                &client.ID,
-                &client.Email,
-                &client.ServerID,
-                &client.ClientName,
-                &client.ClientIP,
-                &client.PublicKey,
-                &client.PrivateKey,
-                &client.Status,
-                &client.CreatedAt,
-        )
-
-        if err != nil {
-                return nil, err
-        }
-
-        return &client, nil
+	return err
 }

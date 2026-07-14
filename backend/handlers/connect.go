@@ -8,6 +8,7 @@ import (
 	"korzadivpn/database"
 	"korzadivpn/middleware"
 	"korzadivpn/models"
+	"korzadivpn/utils"
 )
 
 type ConnectRequest struct {
@@ -22,8 +23,9 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, ok := r.Context().
-		Value(middleware.UserEmailKey).(string)
+	email, ok := r.Context().Value(
+		middleware.UserEmailKey,
+	).(string)
 
 	if !ok {
 		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
@@ -48,62 +50,86 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 	limit := models.GetDeviceLimit(user.Plan)
 
-	active, err := database.CountActiveConnections(email)
+	active, err := database.CountActiveDevices(email)
 
 	if err != nil {
-		http.Error(w, "Error consultando conexiones", http.StatusInternalServerError)
+		http.Error(w, "Error consultando dispositivos", http.StatusInternalServerError)
 		return
 	}
 
 	if active >= limit {
-		http.Error(w, "Límite de dispositivos alcanzado", http.StatusForbidden)
-		return
+
+		existing, _ := database.GetDeviceByName(
+			email,
+			req.Device,
+		)
+
+		if existing == nil {
+
+			http.Error(
+				w,
+				"Límite de dispositivos alcanzado",
+				http.StatusForbidden,
+			)
+
+			return
+		}
 	}
 
-	server, err := database.GetServerByID(req.ServerID)
+	var server *models.Server
 
-	if err != nil {
-		http.Error(w, "Servidor no encontrado", http.StatusNotFound)
-		return
+	if req.ServerID == 0 {
+
+		server, err = database.GetBestServer()
+
+		if err != nil {
+			http.Error(
+				w,
+				"No hay servidores disponibles",
+				http.StatusServiceUnavailable,
+			)
+
+			return
+		}
+
+	} else {
+
+		server, err = database.GetServerByID(req.ServerID)
+
+		if err != nil {
+
+			http.Error(
+				w,
+				"Servidor no encontrado",
+				http.StatusNotFound,
+			)
+
+			return
+		}
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
 
-	device, err := database.GetDeviceByName(
-		email,
-		req.Device,
+	err = database.UpsertDevice(
+		models.Device{
+			Email:      email,
+			DeviceName: req.Device,
+			DeviceType: req.Device,
+			Status:     "connected",
+			LastIP:     r.RemoteAddr,
+			LastServer: server.Name,
+			LastSeen:   now,
+			CreatedAt:  now,
+		},
 	)
 
 	if err != nil {
-		http.Error(w, "Error buscando dispositivo", http.StatusInternalServerError)
+		http.Error(
+			w,
+			"Error guardando dispositivo",
+			http.StatusInternalServerError,
+		)
 		return
-	}
-
-	if device == nil {
-
-		database.RegisterDevice(
-			models.Device{
-				Email:      email,
-				DeviceName: req.Device,
-				DeviceType: req.Device,
-				Status:     "connected",
-				LastIP:     r.RemoteAddr,
-				LastServer: server.Name,
-				LastSeen:   now,
-				CreatedAt:  now,
-			},
-		)
-
-	} else {
-
-		device.Status = "connected"
-		device.LastIP = r.RemoteAddr
-		device.LastServer = server.Name
-		device.LastSeen = now
-
-		database.UpdateDevice(
-			*device,
-		)
 	}
 
 	connection := models.Connection{
@@ -118,30 +144,33 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 		Device: req.Device,
 
+		ClientID: utils.GenerateClientID(),
+
 		IP: r.RemoteAddr,
 
 		ConnectedAt: now,
+
+		LastPing: now,
 	}
 
 	err = database.CreateConnection(connection)
 
 	if err != nil {
-		http.Error(w, "Error creando conexión", http.StatusInternalServerError)
+		http.Error(
+			w,
+			"Error creando conexión",
+			http.StatusInternalServerError,
+		)
 		return
 	}
+
 	database.CreateActivity(
 		models.Activity{
-
-			Email: email,
-
-			Server: server.Name,
-
-			Action: "connected",
-
-			Device: req.Device,
-
-			IP: r.RemoteAddr,
-
+			Email:     email,
+			Server:    server.Name,
+			Action:    "connected",
+			Device:    req.Device,
+			IP:        r.RemoteAddr,
 			CreatedAt: now,
 		},
 	)
@@ -157,15 +186,10 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(
 		map[string]interface{}{
-
-			"message": "Conectado correctamente",
-
-			"server": server.Name,
-
-			"device": req.Device,
-
+			"message":      "Conectado correctamente",
+			"server":       server.Name,
+			"device":       req.Device,
 			"connected_at": now,
 		},
 	)
-
 }

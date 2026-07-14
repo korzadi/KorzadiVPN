@@ -73,3 +73,76 @@ func GetActivity() ([]models.Activity, error) {
 
 	return activities, nil
 }
+
+// CountActivities cuenta todas las actividades.
+func CountActivities() (int, error) {
+
+	var total int
+
+	err := DB.QueryRow(`
+	SELECT COUNT(*)
+	FROM activity_logs
+	`).Scan(&total)
+
+	return total, err
+}
+
+// CountActivityByAction cuenta acciones específicas.
+func CountActivityByAction(action string) (int, error) {
+
+	var total int
+
+	err := DB.QueryRow(`
+	SELECT COUNT(*)
+	FROM activity_logs
+	WHERE action=?
+	`,
+		action).Scan(&total)
+
+	return total, err
+}
+
+// GetLastActivity obtiene último evento.
+func GetLastActivity() (models.Activity, error) {
+
+	var activity models.Activity
+
+	err := DB.QueryRow(`
+	SELECT
+	id,
+	email,
+	server,
+	action,
+	device,
+	ip,
+	created_at
+	FROM activity_logs
+	ORDER BY id DESC
+	LIMIT 1
+	`).Scan(
+		&activity.ID,
+		&activity.Email,
+		&activity.Server,
+		&activity.Action,
+		&activity.Device,
+		&activity.IP,
+		&activity.CreatedAt,
+	)
+
+	return activity, err
+}
+
+// CountUserActivity cuenta actividad del usuario.
+func CountUserActivity(email string) (int, error) {
+
+	var total int
+
+	err := DB.QueryRow(`
+	SELECT COUNT(*)
+	FROM activity_logs
+	WHERE email=?
+	`,
+		email).Scan(&total)
+
+	return total, err
+}

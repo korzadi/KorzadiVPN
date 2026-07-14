@@ -1,96 +1,88 @@
-# Binarios y ejecutables
-*.exe
-*.dll
-*.so
-*.dylib
-*.bin
-korzadivpn
+# Deploy generado
+deploy/package/
+deploy/backend/
+deploy/korzadivpn-api
 
-# Node.js
-node_modules/
-npm-debug.log
-yarn-error.log
-dist/
-build/
-.env.local
-.env.*.local
+# Backups texto
+*.backup
+*.backup.txt# Backups
+backup*/
+backups/
+checkpoints/
+reparados*/
+*.backup
+*.backup.txt
 
-# Go
-*.o
-*.a
-*.so
-bin/
-vendor/
-go.sum
+# Instaladores temporales
+installer/
+
+# VPN Core externo
+vpn-core/
 
 # Bases de datos
 *.db
-*.sqlite
-*.sqlite3
-*.db-journal
+*.db-shm
+*.db-wal
 
-# Archivos de configuración local
-.env
-.env.local
-.env.*.local
-*.conf.local
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# Android
-.gradle/
-.android/
-local.properties
-*.apk
-*.aar
-*.ap_
-*.aab
-build/
-.externalNativeBuild/
-
-# Logs y temporales
-*.log
-logs/
-tmp/
-temp/
-*.tmp
-error.txt
-
-# Archivos de respaldo
-*_respaldo.txt
-*.bak
-*.backup
-
-# Archivos del sistema
-.DS_Store
-Thumbs.db
-.directory
-
-# Carpetas de caché
-.cache/
-__pycache__/
-*.pyc
-*.pyo
-
-# Testing
-coverage/
-.coverage
-htmlcov/
-
-# Secrets
-secrets/
-*.pem
+# Claves
+privatekey
+publickey
 *.key
-*.crt
+
+# Config WireGuard generados
+*.conf
+
+# Deploy generado
+deploy/package/
+deploy/backend/
+deploy/korzadivpn-api
+
+# Node
+node_modules/
+dist/# Backups
+backup*/
+backups/
+checkpoints/
+reparados*/
+
+# Instaladores temporales
+installer/
+
+# VPN Core externo
+vpn-core/
+
+# Bases de datos
+*.db
+*.db-shm
+*.db-wal
+
+# Claves
+privatekey
+publickey
+*.key
+
+# Config WireGuard generados
+*.conf
+
+# Node
+node_modules/
+dist/
+
+# Deploy completo generado
+deploy/backend/
+deploy/package/
+deploy/production/
+
+# Claves VPN dentro de deploy
+deploy/**/*privatekey*
+deploy/**/*publickey*
+deploy/**/*.db
+deploy/**/*.conf
+
+# Bloqueo total del deploy generado
+/deploy/
+
+
+# Deploy interno del backend generado
+/backend/deploy/
+

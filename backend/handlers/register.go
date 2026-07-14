@@ -15,28 +15,36 @@ import (
 func Register(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
+
 		http.Error(
 			w,
 			"Metodo no permitido",
 			http.StatusMethodNotAllowed,
 		)
+
 		return
 	}
 
 	var creds models.Credentials
 
-	err := json.NewDecoder(r.Body).Decode(&creds)
+	err := json.NewDecoder(
+		r.Body,
+	).Decode(&creds)
 
 	if err != nil {
+
 		http.Error(
 			w,
 			"JSON invalido",
 			http.StatusBadRequest,
 		)
+
 		return
 	}
 
-	creds.Email = strings.TrimSpace(creds.Email)
+	creds.Email = strings.TrimSpace(
+		creds.Email,
+	)
 
 	if creds.Email == "" || creds.Password == "" {
 
@@ -65,14 +73,20 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
+	user := models.User{
 
-	user.Email = creds.Email
-	user.Password = string(hash)
-	user.Plan = "free"
-	user.Status = "active"
+		Email: creds.Email,
 
-	err = database.CreateUser(user)
+		Password: string(hash),
+
+		Plan: "free",
+
+		Status: "active",
+	}
+
+	err = database.CreateUser(
+		user,
+	)
 
 	if err != nil {
 
@@ -85,7 +99,26 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
+	// Crear perfil VPN automáticamente
+
+	err = CreateAutomaticVPNProfile(
+		user.Email,
+	)
+
+	if err != nil {
+
+		http.Error(
+			w,
+			"Usuario creado pero error creando VPN",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	now := time.Now().UTC().Format(
+		time.RFC3339,
+	)
 
 	database.CreateActivity(
 		models.Activity{
@@ -113,7 +146,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			"plan": user.Plan,
 
 			"status": user.Status,
+
+			"vpn": "created",
 		},
 	)
-
 }

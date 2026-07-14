@@ -44,7 +44,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 
 		http.Error(
 			w,
-			"Error buscando conexión",
+			"Error buscando conexión: "+err.Error(),
 			http.StatusInternalServerError,
 		)
 
@@ -74,7 +74,6 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
 
 	device, err := database.GetDeviceByName(
 		email,

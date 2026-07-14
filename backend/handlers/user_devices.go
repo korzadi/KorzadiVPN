@@ -10,26 +10,41 @@ import (
 
 func UserDevices(w http.ResponseWriter, r *http.Request) {
 
+	if r.Method != http.MethodGet {
+
+		http.Error(
+			w,
+			"Método no permitido",
+			http.StatusMethodNotAllowed,
+		)
+
+		return
+	}
+
 	email, ok := r.Context().
 		Value(middleware.UserEmailKey).(string)
 
 	if !ok {
+
 		http.Error(
 			w,
 			"Usuario no autenticado",
 			http.StatusUnauthorized,
 		)
+
 		return
 	}
 
 	devices, err := database.GetDevicesByEmail(email)
 
 	if err != nil {
+
 		http.Error(
 			w,
 			"Error obteniendo dispositivos",
 			http.StatusInternalServerError,
 		)
+
 		return
 	}
 
@@ -40,8 +55,10 @@ func UserDevices(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(
 		map[string]interface{}{
+
+			"total": len(devices),
+
 			"devices": devices,
-			"total":   len(devices),
 		},
 	)
 }

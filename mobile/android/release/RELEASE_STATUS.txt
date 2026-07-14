@@ -1,0 +1,19 @@
+KorzadiVPN Android Release
+
+LISTO:
+
+[OK] Arquitectura app
+[OK] Pantallas base
+[OK] Login
+[OK] Servidores
+[OK] Conexion VPN base
+[OK] API Backend
+
+PENDIENTE FINAL:
+
+1. Instalar Android SDK
+2. Crear proyecto Gradle completo
+3. Integrar WireGuard Android
+4. Firmar APK
+5. Generar APK/AAB
+6. Publicar
