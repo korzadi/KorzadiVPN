@@ -115,3 +115,10 @@ client_create.json
 pre_move_*
 post_move_*
 auditoria_*
+
+# Android
+.gradle/
+build/
+*/build/
+*.apk
+
