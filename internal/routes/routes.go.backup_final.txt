@@ -1,0 +1,193 @@
+package routes
+
+import (
+	"net/http"
+
+	"korzadivpn/handlers"
+	"korzadivpn/middleware"
+)
+
+func RegisterRoutes() {
+
+	http.HandleFunc("/api/admin/nodes", handlers.ListVPNNodes)
+
+	http.HandleFunc("/api/admin/nodes/create", handlers.CreateVPNNode)
+
+	http.HandleFunc("/api/vpn/connect", handlers.StartVPNConnection)
+
+	http.HandleFunc(
+		"/status",
+		handlers.Status,
+	)
+
+	// USUARIOS
+
+	http.HandleFunc(
+		"/api/register",
+		handlers.Register,
+	)
+
+	http.HandleFunc(
+		"/api/login",
+		handlers.Login,
+	)
+
+	http.HandleFunc(
+		"/api/profile",
+		middleware.Auth(
+			handlers.Profile,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/user/dashboard",
+		middleware.Auth(
+			handlers.UserDashboard,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/user/devices",
+		middleware.Auth(
+			handlers.UserDevices,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/user/device/",
+		middleware.Auth(
+			handlers.DeleteDevice,
+		),
+	)
+
+	// SERVIDORES
+
+	http.HandleFunc(
+		"/api/servers",
+		handlers.Servers,
+	)
+
+	http.HandleFunc(
+		"/api/servers/best",
+		handlers.BestServer,
+	)
+
+	http.HandleFunc(
+		"/api/servers/load",
+		handlers.ServersLoad,
+	)
+
+	http.HandleFunc(
+		"/api/plans",
+		handlers.Plans,
+	)
+
+	http.HandleFunc(
+		"/api/change-plan",
+		middleware.Auth(
+			handlers.ChangePlan,
+		),
+	)
+
+	// VPN
+
+	http.HandleFunc(
+		"/api/connect",
+		middleware.Auth(
+			handlers.Connect,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/disconnect",
+		middleware.Auth(
+			handlers.Disconnect,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/vpn/profile",
+		middleware.Auth(
+			handlers.CreateVPNProfile,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/vpn/profile/get",
+		middleware.Auth(
+			handlers.GetVPNProfile,
+		),
+	)
+
+	http.HandleFunc(
+		"/api/vpn/profile/download",
+		middleware.Auth(
+			handlers.DownloadVPNProfile,
+		),
+	)
+
+	// CLIENTE VPN WIREGUARD
+
+	http.HandleFunc(
+		"/api/vpn/client/create",
+		middleware.Auth(
+			handlers.CreateVPNClient,
+		),
+	)
+
+	// ADMIN
+
+	http.HandleFunc(
+		"/api/admin/users",
+		middleware.Auth(
+			middleware.AdminAuth(
+				handlers.AdminUsers,
+			),
+		),
+	)
+
+	http.HandleFunc(
+		"/api/admin/servers",
+		middleware.Auth(
+			middleware.AdminAuth(
+				handlers.AdminServers,
+			),
+		),
+	)
+
+	http.HandleFunc(
+		"/api/admin/connections",
+		middleware.Auth(
+			middleware.AdminAuth(
+				handlers.AdminConnections,
+			),
+		),
+	)
+
+	http.HandleFunc(
+		"/api/admin/stats",
+		middleware.Auth(
+			middleware.AdminAuth(
+				handlers.AdminStats,
+			),
+		),
+	)
+
+	http.HandleFunc(
+		"/api/admin/activity",
+		middleware.Auth(
+			middleware.AdminAuth(
+				handlers.AdminActivity,
+			),
+		),
+	)
+
+	http.HandleFunc(
+		"/api/admin/dashboard",
+		middleware.Auth(
+			middleware.AdminAuth(
+				handlers.AdminDashboard,
+			),
+		),
+	)
+}

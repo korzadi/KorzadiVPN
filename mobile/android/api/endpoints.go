@@ -1,7 +1,6 @@
 package api
 
 const (
-
 	Login = "/api/login"
 
 	Register = "/api/register"

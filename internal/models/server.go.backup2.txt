@@ -1,0 +1,33 @@
+package models
+
+type Server struct {
+	ID int `json:"id"`
+
+	Name string `json:"name"`
+
+	Country string `json:"country"`
+
+	City string `json:"city"`
+
+	Protocol string `json:"protocol"`
+
+	Status string `json:"status"`
+
+	MaxUsers int `json:"max_users"`
+
+	CurrentUsers int `json:"current_users"`
+
+	Latency int `json:"latency"`
+
+	// Datos WireGuard
+
+	ServerIP string `json:"server_ip"`
+
+	WireGuardPort int `json:"wireguard_port"`
+
+	ServerPublicKey string `json:"server_public_key"`
+
+	ServerPrivateKey string `json:"server_private_key"`
+
+	DNS string `json:"dns"`
+}
