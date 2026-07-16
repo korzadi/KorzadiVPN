@@ -86,3 +86,32 @@ deploy/**/*.conf
 # Deploy interno del backend generado
 /backend/deploy/
 
+
+# Secretos
+.env
+*.db
+*.key
+*.pem
+
+# Binarios
+korzadivpn*
+vpn_api
+
+# Backups
+backup_*
+client_backup_*
+*.tar.gz
+
+# Logs
+*.log
+
+# Respuestas de prueba
+*_response.json
+login_*.json
+profile_gen.json
+client_create.json
+
+# Documentación temporal
+pre_move_*
+post_move_*
+auditoria_*
