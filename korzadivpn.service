@@ -1,0 +1,16 @@
+[Unit]
+Description=KorzadiVPN API Service
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+Group=appgroup
+WorkingDirectory=/opt/korzadivpn
+EnvironmentFile=/opt/korzadivpn/.env
+ExecStart=/opt/korzadivpn/korzadivpn
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

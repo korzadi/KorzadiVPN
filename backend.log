@@ -1,0 +1,9 @@
+2026/07/15 20:11:26 Base de datos conectada en: korzadivpn.db
+2026/07/15 20:11:26 Tablas creadas correctamente
+2026/07/15 20:11:26 Tabla vpn_clients y índice verificados correctamente
+2026/07/15 20:11:26 Migración vpn_clients completada
+2026/07/15 20:11:26 Migración server_private_key: OK
+KorzadiVPN API iniciada en puerto 8080 🚀
+2026/07/15 20:13:10 Aprovisionando peer en wg0: PN93AqrzOYG3xucdFm6eRhp7PRe8Hdlccj0tgV67pQ4=
+2026/07/15 20:13:10 Error provisionando peer para test2@korzadi.com: error al aprovisionar peer PN93AqrzOYG3xucdFm6eRhp7PRe8Hdlccj0tgV67pQ4=: exit status 1, salida: Unable to modify interface: Permission denied
+2026/07/15 20:13:10 Eliminando peer de wg0: PN93AqrzOYG3xucdFm6eRhp7PRe8Hdlccj0tgV67pQ4=
