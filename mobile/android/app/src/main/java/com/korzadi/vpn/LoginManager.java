@@ -1,7 +1,14 @@
 package com.korzadi.vpn;
 
+import com.korzadi.vpn.api.AuthClient;
 
 public class LoginManager {
+
+    private AuthClient authClient;
+
+    public LoginManager(){
+        authClient = new AuthClient();
+    }
 
 
     public boolean login(
@@ -9,12 +16,16 @@ public class LoginManager {
             String password
     ){
 
-        if(email == null || password == null){
+        return authClient.login(
+                email,
+                password
+        );
+    }
 
-            return false;
-        }
 
+    public String getToken(){
 
-        return true;
+        return authClient.getToken();
+
     }
 }

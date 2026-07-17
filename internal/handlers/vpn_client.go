@@ -11,6 +11,8 @@ import (
 	"korzadivpn/internal/models"
 	"korzadivpn/internal/services"
 	"korzadivpn/pkg/utils"
+	"korzadivpn/vpn-core/generator"
+	"korzadivpn/vpn-core/wireguard"
 )
 
 func CreateVPNClient(
@@ -80,6 +82,23 @@ func CreateVPNClient(
 			UTC().
 			Format(time.RFC3339)
 
+		// Generar configuración WireGuard del cliente
+	wgPeer := wireguard.Peer{
+		PrivateKey: privateKey,
+		IPAddress:  clientIP,
+	}
+
+	wgServer := wireguard.Server{
+		PublicKey: server.ServerPublicKey,
+		Endpoint:  server.Name,
+		Port:      server.WireGuardPort,
+	}
+
+	clientConfig := generator.GenerateClientConfig(
+		wgPeer,
+		wgServer,
+	)
+
 	client := models.VPNClient{
 
 		Email: email,
@@ -107,6 +126,7 @@ func CreateVPNClient(
 		MTU: 1420,
 
 		AllowedIPs: "0.0.0.0/0, ::/0",
+		Config:     clientConfig,
 
 		Endpoint: server.Name,
 
@@ -174,6 +194,8 @@ func CreateVPNClient(
 
 	database.UpdateVPNClientStatusByEmail(client.Email, "active")
 	client.Status = "active"
+
+	client.Config = clientConfig
 
 	database.IncrementServerUsers(
 		server.ID,

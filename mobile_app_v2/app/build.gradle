@@ -13,6 +13,7 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -23,13 +24,44 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.0'
     }
+
+    signingConfigs {
+        release {
+            storeFile file("../keystore/korzadi-release.jks")
+            storePassword "korzadi123"
+            keyAlias "korzadi"
+            keyPassword "korzadi123"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
 }
 
 dependencies {
+    implementation 'com.wireguard.android:tunnel:1.0.20230706'
+
     implementation 'androidx.core:core-ktx:1.12.0'
+
+    implementation 'androidx.activity:activity-compose:1.8.2'
+
     implementation 'androidx.compose.ui:ui:1.6.0'
     implementation 'androidx.compose.material3:material3:1.2.0'
+
+    implementation 'androidx.navigation:navigation-compose:2.7.7'
+
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    implementation 'com.wireguard.android:tunnel:1.0.20231025'
+
+}
+
+kotlin {
+    jvmToolchain(17)
 }

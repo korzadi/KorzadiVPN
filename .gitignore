@@ -115,3 +115,13 @@ client_create.json
 pre_move_*
 post_move_*
 auditoria_*
+
+# Android generado
+mobile_app_v2/.gradle/
+mobile_app_v2/app/build/
+
+# Android signing keys
+mobile_app_v2/keystore/
+*.jks
+*.keystore
+mobile_app_v2/*.zip

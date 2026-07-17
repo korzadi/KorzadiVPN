@@ -11,49 +11,50 @@ func CreateVPNClient(client models.VPNClient) error {
 	if err != nil {
 		return err
 	}
+
 	client.PrivateKey = encryptedKey
 
-	_, err = DB.Exec(
-		`  
-	INSERT INTO vpn_clients  
-	(  
-		email,  
-		server_id,  
-		node_id,  
-		client_name,  
-		device_id,  
-		device_name,  
-		device_type,  
-		client_ip,  
-		ipv6,  
-		public_key,  
-		private_key,  
-		preshared_key,  
-		config,  
-		protocol,  
-		dns,  
-		mtu,  
-		allowed_ips,  
-		endpoint,  
-		status,  
-		connection_status,  
-		plan,  
-		bandwidth_limit,  
-		data_used,  
-		max_devices,  
-		last_handshake,  
-		last_connected,  
-		last_disconnected,  
-		last_ip,  
-		country,  
-		city,  
-		expires_at,  
-		revoked_at,  
-		created_at,  
-		updated_at  
-	)  
-	VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)  
-	`,
+	result, err := DB.Exec(
+		`
+		INSERT INTO vpn_clients
+		(
+			email,
+			server_id,
+			node_id,
+			client_name,
+			device_id,
+			device_name,
+			device_type,
+			client_ip,
+			ipv6,
+			public_key,
+			private_key,
+			preshared_key,
+			config,
+			protocol,
+			dns,
+			mtu,
+			allowed_ips,
+			endpoint,
+			status,
+			connection_status,
+			plan,
+			bandwidth_limit,
+			data_used,
+			max_devices,
+			last_handshake,
+			last_connected,
+			last_disconnected,
+			last_ip,
+			country,
+			city,
+			expires_at,
+			revoked_at,
+			created_at,
+			updated_at
+		)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		`,
 		client.Email,
 		client.ServerID,
 		client.NodeID,
@@ -90,8 +91,18 @@ func CreateVPNClient(client models.VPNClient) error {
 		client.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
 
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	client.ID = int(id)
+
+	return nil
 }
 
 func GetVPNClientByEmail(email string) (*models.VPNClient, error) {
