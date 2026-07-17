@@ -1,33 +1,36 @@
-name: Android CI
+name: Android Build
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: mobile_app_v2
-
     steps:
-      - name: Descargar código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: gradle
+          distribution: temurin
+          java-version: 17
 
-      - name: Dar permisos a Gradle
-        run: chmod +x gradlew
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Compilar APK
-        run: ./gradlew assembleDebug
+      - name: Build APK
+        working-directory: mobile_app_v2
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: korzadi-debug-apk
+          path: mobile_app_v2/app/build/outputs/apk/debug/*.apk
