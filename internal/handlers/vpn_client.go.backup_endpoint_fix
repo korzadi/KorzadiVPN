@@ -90,7 +90,7 @@ func CreateVPNClient(
 
 	wgServer := wireguard.Server{
 		PublicKey: server.ServerPublicKey,
-		Endpoint:  server.ServerIP,
+		Endpoint:  server.Name,
 		Port:      server.WireGuardPort,
 	}
 
@@ -128,7 +128,7 @@ func CreateVPNClient(
 		AllowedIPs: "0.0.0.0/0, ::/0",
 		Config:     clientConfig,
 
-		Endpoint: server.ServerIP,
+		Endpoint: server.Name,
 
 		Status: "pending",
 

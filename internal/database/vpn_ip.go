@@ -10,7 +10,7 @@ func GetNextVPNClientIP() (string, error) {
 	for i := 2; i < 255; i++ {
 
 		ip := fmt.Sprintf(
-			"10.0.0.%d",
+			"10.10.0.%d",
 			i,
 		)
 
@@ -23,24 +23,17 @@ func GetNextVPNClientIP() (string, error) {
 			WHERE client_ip=?
 			`,
 			ip,
-		).Scan(
-			&count,
-		)
+		).Scan(&count)
 
 		if err != nil {
 			return "", err
 		}
 
 		if count == 0 {
-
 			return ip, nil
-
 		}
 
 	}
 
-	return "", fmt.Errorf(
-		"No hay IPs disponibles",
-	)
-
+	return "", fmt.Errorf("No hay IPs disponibles")
 }

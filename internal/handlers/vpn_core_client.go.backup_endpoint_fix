@@ -110,7 +110,7 @@ func CreateVPNCoreClient(
 
 			AllowedIPs: "0.0.0.0/0, ::/0",
 
-			Endpoint: server.ServerIP,
+			Endpoint: server.Name,
 
 			Status: "active",
 
