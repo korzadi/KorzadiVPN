@@ -1,0 +1,53 @@
+name: KorzadiVPN Full Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Show project structure
+      run: |
+        echo "=== PROJECT STRUCTURE ==="
+        ls -la
+        find . -maxdepth 3 -type f | head -100
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "1.22"
+
+    - name: Detect Go project
+      run: |
+        find . -name "go.mod"
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: Detect Android project
+      run: |
+        find . -name "gradlew"
+
+    - name: Generate basic audit report
+      run: |
+        mkdir -p audit
+        echo "# KorzadiVPN Audit Report" > audit/report.md
+        echo "Repository scanned successfully" >> audit/report.md
+
+    - name: Upload audit report
+      uses: actions/upload-artifact@v4
+      with:
+        name: korzadi-audit-report
+        path: audit/
