@@ -1,4 +1,5 @@
-name: KorzadiVPN Full Audit
+
+name: KorzadiVPN Deep Audit
 
 on:
   workflow_dispatch:
@@ -7,7 +8,9 @@ on:
       - main
 
 jobs:
+
   audit:
+    name: Full Repository Audit
     runs-on: ubuntu-latest
 
     steps:
@@ -15,39 +18,111 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Show project structure
+    - name: Project structure analysis
       run: |
-        echo "=== PROJECT STRUCTURE ==="
-        ls -la
-        find . -maxdepth 3 -type f | head -100
+        mkdir -p audit
+        echo "# KorzadiVPN Technical Audit" > audit/report.md
+        echo "" >> audit/report.md
 
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: "1.22"
+        echo "## Repository Structure" >> audit/report.md
+        find . -maxdepth 4 -type f \
+        ! -path "./.git/*" \
+        >> audit/report.md
 
-    - name: Detect Go project
+    - name: Detect Go backend
       run: |
-        find . -name "go.mod"
+        echo "## Go Analysis" >> audit/report.md
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: 17
+        find . -name "go.mod" >> audit/report.md
+
+        if find . -name "go.mod" | grep -q go.mod; then
+          GO_DIR=$(dirname $(find . -name "go.mod" | head -1))
+          cd "$GO_DIR"
+
+          go version >> ../../audit/report.md || true
+
+          go mod verify >> ../../audit/report.md || true
+
+          go vet ./... >> ../../audit/report.md || true
+
+          go test ./... >> ../../audit/report.md || true
+
+          go list -m all >> ../../audit/report.md || true
+        fi
+
+    - name: Go Security Scan
+      uses: securego/gosec@master
+      continue-on-error: true
 
     - name: Detect Android project
       run: |
-        find . -name "gradlew"
+        echo "## Android Analysis" >> audit/report.md
 
-    - name: Generate basic audit report
+        find . -name "gradlew" >> audit/report.md
+
+    - name: Android Build Analysis
       run: |
-        mkdir -p audit
-        echo "# KorzadiVPN Audit Report" > audit/report.md
-        echo "Repository scanned successfully" >> audit/report.md
+        if find . -name "gradlew" | grep -q gradlew; then
 
-    - name: Upload audit report
+          ANDROID_DIR=$(dirname $(find . -name "gradlew" | head -1))
+
+          cd "$ANDROID_DIR"
+
+          chmod +x gradlew
+
+          ./gradlew lint assembleDebug \
+          >> ../../audit/report.md 2>&1 || true
+
+        else
+
+          echo "Android project not detected" >> audit/report.md
+
+        fi
+
+    - name: Dependency Analysis
+      run: |
+        echo "## Dependencies" >> audit/report.md
+
+        find . \
+        \( -name "build.gradle*" \
+        -o -name "pom.xml" \
+        -o -name "package.json" \
+        -o -name "go.mod" \) \
+        >> audit/report.md
+
+    - name: Security Files Scan
+      run: |
+        echo "## Possible Sensitive Files" >> audit/report.md
+
+        find . \
+        \( -name "*.key" \
+        -o -name "*.pem" \
+        -o -name "*.env" \
+        -o -name "*.conf" \) \
+        >> audit/report.md || true
+
+    - name: TODO and FIXME Scan
+      run: |
+        echo "## TODO FIXME" >> audit/report.md
+
+        grep -R \
+        -E "TODO|FIXME|HACK|XXX" \
+        . \
+        --exclude-dir=.git \
+        >> audit/report.md || true
+
+    - name: Duplicate Files Scan
+      run: |
+        echo "## Duplicate Files" >> audit/report.md
+
+        find . -type f \
+        ! -path "./.git/*" \
+        -exec md5sum {} \; \
+        | sort \
+        >> audit/report.md
+
+    - name: Upload Complete Audit
       uses: actions/upload-artifact@v4
       with:
-        name: korzadi-audit-report
+        name: korzadi-deep-audit-report
         path: audit/
