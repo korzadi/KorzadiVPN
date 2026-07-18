@@ -33,6 +33,13 @@ func RegisterRoutes(mux *http.ServeMux) {
 	)
 
 	mux.HandleFunc(
+		"/api/logout",
+		middleware.Auth(
+			handlers.Logout,
+		),
+	)
+
+	mux.HandleFunc(
 		"/api/profile",
 		middleware.Auth(
 			handlers.Profile,
@@ -132,6 +139,14 @@ func RegisterRoutes(mux *http.ServeMux) {
 		"/api/vpn/status",
 		middleware.Auth(
 			handlers.VPNStatus,
+		),
+	)
+
+	// HEARTBEAT VPN
+	mux.HandleFunc(
+		"/api/vpn/heartbeat",
+		middleware.Auth(
+			handlers.Heartbeat,
 		),
 	)
 

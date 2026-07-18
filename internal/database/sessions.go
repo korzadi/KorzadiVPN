@@ -209,3 +209,13 @@ func GetActiveSessionsByEmail(email string) ([]models.Session, error) {
 
 	return sessions, nil
 }
+
+func CleanupExpiredSessions() error {
+	_, err := DB.Exec(`
+		DELETE FROM sessions
+		WHERE expires_at < datetime('now')
+		OR status != 'active'
+	`)
+
+	return err
+}

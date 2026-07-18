@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
+	"korzadivpn/config"
 	"korzadivpn/internal/database"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,24 +17,18 @@ type ContextKey string
 var UserEmailKey ContextKey = "userEmail"
 
 func Auth(next http.HandlerFunc) http.HandlerFunc {
-
 	return func(
 		w http.ResponseWriter,
 		r *http.Request,
 	) {
-
-		authHeader := r.Header.Get(
-			"Authorization",
-		)
+		authHeader := r.Header.Get("Authorization")
 
 		if authHeader == "" {
-
 			http.Error(
 				w,
 				"Token requerido",
 				http.StatusUnauthorized,
 			)
-
 			return
 		}
 
@@ -43,42 +39,87 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 
 		token, err := jwt.Parse(
 			tokenString,
-			func(
-				token *jwt.Token,
-			) (interface{}, error) {
+			func(token *jwt.Token) (interface{}, error) {
 
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-
+				if token.Method != jwt.SigningMethodHS256 {
 					return nil, jwt.ErrSignatureInvalid
 				}
 
-				return SecretKey, nil
+				return config.GetJWTSecret(), nil
 			},
 		)
 
 		if err != nil || !token.Valid {
-
 			http.Error(
 				w,
-				"Token invalido",
+				"Token invalido o expirado",
 				http.StatusUnauthorized,
 			)
-
 			return
 		}
 
-		session, err := database.GetActiveSession(
-			tokenString,
-		)
+		claims, ok := token.Claims.(jwt.MapClaims)
+
+		if !ok {
+			http.Error(
+				w,
+				"Claims invalidos",
+				http.StatusUnauthorized,
+			)
+			return
+		}
+
+		exp, ok := claims["exp"].(float64)
+
+		if !ok {
+			http.Error(
+				w,
+				"Expiracion invalida",
+				http.StatusUnauthorized,
+			)
+			return
+		}
+
+		if time.Now().Unix() > int64(exp) {
+			http.Error(
+				w,
+				"Token expirado",
+				http.StatusUnauthorized,
+			)
+			return
+		}
+
+		session, err := database.GetActiveSession(tokenString)
 
 		if err != nil || session == nil {
-
 			http.Error(
 				w,
 				"Sesion no activa",
 				http.StatusUnauthorized,
 			)
+			return
+		}
 
+		expiresAt, err := time.Parse(
+			time.RFC3339,
+			session.ExpiresAt,
+		)
+
+		if err != nil {
+			http.Error(
+				w,
+				"Fecha de sesion invalida",
+				http.StatusUnauthorized,
+			)
+			return
+		}
+
+		if time.Now().UTC().After(expiresAt) {
+			http.Error(
+				w,
+				"Sesion expirada",
+				http.StatusUnauthorized,
+			)
 			return
 		}
 
