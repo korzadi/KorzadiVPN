@@ -1,4 +1,4 @@
-cat > .github/workflows/audit-free.yml <<'EOF'
+
 name: Audit Free
 
 # Auditoría técnica automática y 100% gratuita (sin APIs externas ni
@@ -339,4 +339,3 @@ jobs:
             AUDIT_REPORT.md
             audit-artifacts/
           retention-days: 30
-EOF
