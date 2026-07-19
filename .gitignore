@@ -1,0 +1,55 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# WireGuard configs
+*.conf
+!docker-compose.yml
+
+# Keys / certificates
+*.key
+*.pem
+*.crt
+
+# Backups
+*backup*
+*.bak
+*.old
+*.tmp
+
+# Logs
+*.log
+
+# Generated binaries
+korzadivpn_prod
+korzadivpn_prod.*
+*.exe
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Android
+**/.gradle/
+**/build/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
