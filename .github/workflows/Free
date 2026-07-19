@@ -1,0 +1,342 @@
+cat > .github/workflows/audit-free.yml <<'EOF'
+name: Audit Free
+
+# Auditoría técnica automática y 100% gratuita (sin APIs externas ni
+# servicios de pago). Se ejecuta manualmente desde la pestaña "Actions".
+#
+# Analiza:
+#   1) Backend Go: compilación, go vet, go test, govulncheck
+#   2) Android Kotlin (si existe): ./gradlew lint
+#   3) Seguridad: gitleaks (secretos, API keys, JWT, private keys, tokens)
+#
+# Genera AUDIT_REPORT.md y lo sube como artifact. No modifica el código,
+# no rompe el repositorio, y continúa aunque algún análisis falle.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preparar metadatos de auditoría
+        run: |
+          mkdir -p audit-artifacts
+          echo "FECHA_AUDITORIA=$(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$GITHUB_ENV"
+          echo "COMMIT_AUDITADO=${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "RAMA_AUDITADA=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      # -----------------------------------------------------------------
+      # BACKEND GO
+      # -----------------------------------------------------------------
+      - name: Detectar proyecto Go
+        id: detect_go
+        run: |
+          if [ -f "go.mod" ]; then
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configurar Go
+        if: steps.detect_go.outputs.existe == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: "Go: compilación (go build)"
+        if: steps.detect_go.outputs.existe == 'true'
+        run: |
+          set +e
+          go build ./... > audit-artifacts/go_build.log 2>&1
+          echo "$?" > audit-artifacts/go_build.status
+          cat audit-artifacts/go_build.log
+          exit 0
+
+      - name: "Go: go vet"
+        if: steps.detect_go.outputs.existe == 'true'
+        run: |
+          set +e
+          go vet ./... > audit-artifacts/go_vet.log 2>&1
+          echo "$?" > audit-artifacts/go_vet.status
+          cat audit-artifacts/go_vet.log
+          exit 0
+
+      - name: "Go: go test"
+        if: steps.detect_go.outputs.existe == 'true'
+        run: |
+          set +e
+          go test ./... > audit-artifacts/go_test.log 2>&1
+          echo "$?" > audit-artifacts/go_test.status
+          cat audit-artifacts/go_test.log
+          exit 0
+
+      - name: "Go: instalar y ejecutar govulncheck"
+        if: steps.detect_go.outputs.existe == 'true'
+        run: |
+          set +e
+          go install golang.org/x/vuln/cmd/govulncheck@latest > audit-artifacts/govulncheck_install.log 2>&1
+          if [ -x "$(go env GOPATH)/bin/govulncheck" ]; then
+            "$(go env GOPATH)/bin/govulncheck" ./... > audit-artifacts/govulncheck.log 2>&1
+            echo "$?" > audit-artifacts/govulncheck.status
+          else
+            echo "No se pudo instalar govulncheck" > audit-artifacts/govulncheck.log
+            echo "1" > audit-artifacts/govulncheck.status
+          fi
+          cat audit-artifacts/govulncheck.log
+          exit 0
+
+      - name: "Go: revisar dependencias declaradas"
+        if: steps.detect_go.outputs.existe == 'true'
+        run: |
+          set +e
+          go list -m all > audit-artifacts/go_dependencias.log 2>&1
+          echo "$?" > audit-artifacts/go_dependencias.status
+          exit 0
+
+      # -----------------------------------------------------------------
+      # ANDROID KOTLIN
+      # -----------------------------------------------------------------
+      - name: Detectar proyecto Android
+        id: detect_android
+        run: |
+          GRADLEW_PATH=$(find . -maxdepth 3 -name "gradlew" -type f | head -n 1 || true)
+          if [ -n "$GRADLEW_PATH" ]; then
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+            echo "ruta=$GRADLEW_PATH" >> "$GITHUB_OUTPUT"
+            echo "directorio=$(dirname "$GRADLEW_PATH")" >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configurar Java (para Gradle)
+        if: steps.detect_android.outputs.existe == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: "Android: gradlew lint"
+        if: steps.detect_android.outputs.existe == 'true'
+        working-directory: ${{ steps.detect_android.outputs.directorio }}
+        run: |
+          set +e
+          chmod +x ./gradlew
+          ./gradlew lint --continue > "${GITHUB_WORKSPACE}/audit-artifacts/android_lint.log" 2>&1
+          echo "$?" > "${GITHUB_WORKSPACE}/audit-artifacts/android_lint.status"
+          cat "${GITHUB_WORKSPACE}/audit-artifacts/android_lint.log"
+          exit 0
+
+      - name: "Android: recolectar reportes de lint (XML/HTML)"
+        if: steps.detect_android.outputs.existe == 'true'
+        run: |
+          set +e
+          mkdir -p audit-artifacts/android-lint-reports
+          find . -path "*/build/reports/lint-results*.xml" -exec cp {} audit-artifacts/android-lint-reports/ \; 2>/dev/null
+          exit 0
+
+      # -----------------------------------------------------------------
+      # SEGURIDAD: GITLEAKS
+      # -----------------------------------------------------------------
+      - name: "Seguridad: instalar gitleaks"
+        run: |
+          set +e
+          GITLEAKS_VERSION="8.21.2"
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+          exit 0
+
+      - name: "Seguridad: ejecutar gitleaks (API keys, JWT, private keys, tokens, contraseñas)"
+        run: |
+          set +e
+          gitleaks detect \
+            --source . \
+            --report-format json \
+            --report-path audit-artifacts/gitleaks-report.json \
+            --exit-code 0 \
+            --no-banner \
+            --redact > audit-artifacts/gitleaks.log 2>&1
+          echo "$?" > audit-artifacts/gitleaks.status
+          cat audit-artifacts/gitleaks.log
+          exit 0
+
+      # -----------------------------------------------------------------
+      # GENERAR AUDIT_REPORT.md
+      # -----------------------------------------------------------------
+      - name: Generar AUDIT_REPORT.md
+        run: |
+          set +e
+
+          leer_status() {
+            local f="$1"
+            if [ -f "$f" ]; then cat "$f"; else echo "N/A"; fi
+          }
+
+          BACKEND_EXISTE="${{ steps.detect_go.outputs.existe }}"
+          ANDROID_EXISTE="${{ steps.detect_android.outputs.existe }}"
+
+          BUILD_STATUS=$(leer_status audit-artifacts/go_build.status)
+          VET_STATUS=$(leer_status audit-artifacts/go_vet.status)
+          TEST_STATUS=$(leer_status audit-artifacts/go_test.status)
+          VULN_STATUS=$(leer_status audit-artifacts/govulncheck.status)
+          LINT_STATUS=$(leer_status audit-artifacts/android_lint.status)
+          GITLEAKS_STATUS=$(leer_status audit-artifacts/gitleaks.status)
+
+          # Contar secretos encontrados por gitleaks (si hay reporte JSON válido)
+          GITLEAKS_HALLAZGOS=0
+          if [ -f audit-artifacts/gitleaks-report.json ] && [ -s audit-artifacts/gitleaks-report.json ]; then
+            GITLEAKS_HALLAZGOS=$(grep -o '"RuleID"' audit-artifacts/gitleaks-report.json | wc -l | tr -d ' ')
+          fi
+
+          # Contar vulnerabilidades reportadas por govulncheck (líneas "Vulnerability #")
+          VULN_HALLAZGOS=0
+          if [ -f audit-artifacts/govulncheck.log ]; then
+            VULN_HALLAZGOS=$(grep -c "Vulnerability #" audit-artifacts/govulncheck.log || true)
+          fi
+
+          # Contar issues de go vet (líneas de salida, aproximado)
+          VET_HALLAZGOS=0
+          if [ -f audit-artifacts/go_vet.log ] && [ "$VET_STATUS" != "0" ]; then
+            VET_HALLAZGOS=$(grep -c ".*" audit-artifacts/go_vet.log || true)
+          fi
+
+          # Contar errores/warnings de Android lint
+          LINT_ERRORES=0
+          LINT_WARNINGS=0
+          if [ -f audit-artifacts/android_lint.log ]; then
+            LINT_ERRORES=$(grep -c "Error:" audit-artifacts/android_lint.log || true)
+            LINT_WARNINGS=$(grep -c "Warning:" audit-artifacts/android_lint.log || true)
+          fi
+
+          estado_texto() {
+            local status="$1"
+            if [ "$status" = "N/A" ]; then echo "No aplica / no detectado"
+            elif [ "$status" = "0" ]; then echo "OK"
+            else echo "FALLÓ (código $status)"; fi
+          }
+
+          {
+            echo "# AUDIT_REPORT.md — KorzadiVPN"
+            echo ""
+            echo "**Fecha de auditoría (UTC):** ${FECHA_AUDITORIA}"
+            echo "**Commit analizado:** \`${COMMIT_AUDITADO}\`"
+            echo "**Rama:** \`${RAMA_AUDITADA}\`"
+            echo ""
+            echo "> Auditoría automática, gratuita, sin APIs externas ni servicios de pago."
+            echo "> No se modificó ningún archivo del repositorio; solo se ejecutaron análisis de lectura."
+            echo ""
+            echo "---"
+            echo ""
+            echo "## 1. Estado del Backend (Go)"
+            echo ""
+            if [ "$BACKEND_EXISTE" = "true" ]; then
+              echo "| Verificación | Resultado |"
+              echo "|---|---|"
+              echo "| Compilación (\`go build ./...\`) | $(estado_texto "$BUILD_STATUS") |"
+              echo "| Análisis estático (\`go vet ./...\`) | $(estado_texto "$VET_STATUS") |"
+              echo "| Pruebas (\`go test ./...\`) | $(estado_texto "$TEST_STATUS") |"
+              echo "| Vulnerabilidades (\`govulncheck\`) | $(estado_texto "$VULN_STATUS") — $VULN_HALLAZGOS vulnerabilidad(es) reportada(s) |"
+            else
+              echo "_No se detectó \`go.mod\` en el repositorio. Backend Go no analizado._"
+            fi
+            echo ""
+            echo "## 2. Estado de Android (Kotlin)"
+            echo ""
+            if [ "$ANDROID_EXISTE" = "true" ]; then
+              echo "| Verificación | Resultado |"
+              echo "|---|---|"
+              echo "| Lint (\`./gradlew lint\`) | $(estado_texto "$LINT_STATUS") — $LINT_ERRORES error(es), $LINT_WARNINGS warning(s) |"
+            else
+              echo "_No se detectó ningún \`gradlew\` en el repositorio. Proyecto Android no analizado._"
+            fi
+            echo ""
+            echo "## 3. Estado de Seguridad (gitleaks)"
+            echo ""
+            echo "| Verificación | Resultado |"
+            echo "|---|---|"
+            echo "| Escaneo de secretos (\`gitleaks detect\`) | $(estado_texto "$GITLEAKS_STATUS") — $GITLEAKS_HALLAZGOS hallazgo(s) |"
+            echo ""
+            echo "---"
+            echo ""
+            echo "## 4. Problemas encontrados"
+            echo ""
+            echo "| Problema | Gravedad | Origen | Detalle |"
+            echo "|---|---|---|---|"
+
+            if [ "$GITLEAKS_HALLAZGOS" -gt 0 ] 2>/dev/null; then
+              echo "| Se detectaron $GITLEAKS_HALLAZGOS posible(s) secreto(s) expuesto(s) (API keys, JWT, tokens, contraseñas, etc.) | CRÍTICO | gitleaks | Ver \`gitleaks-report.json\` en los artifacts |"
+            fi
+            if [ "$BUILD_STATUS" != "0" ] && [ "$BUILD_STATUS" != "N/A" ]; then
+              echo "| El backend no compila (\`go build ./...\` falló) | CRÍTICO | Backend Go | Ver \`go_build.log\` en los artifacts |"
+            fi
+            if [ "$TEST_STATUS" != "0" ] && [ "$TEST_STATUS" != "N/A" ]; then
+              echo "| Fallos en pruebas automatizadas (\`go test ./...\`) | ALTO | Backend Go | Ver \`go_test.log\` en los artifacts |"
+            fi
+            if [ "$VULN_HALLAZGOS" -gt 0 ] 2>/dev/null; then
+              echo "| Se detectaron $VULN_HALLAZGOS vulnerabilidad(es) en dependencias | ALTO | govulncheck | Ver \`govulncheck.log\` en los artifacts |"
+            fi
+            if [ "$VET_STATUS" != "0" ] && [ "$VET_STATUS" != "N/A" ]; then
+              echo "| \`go vet\` reportó posibles errores de código | MEDIO | Backend Go | Ver \`go_vet.log\` en los artifacts |"
+            fi
+            if [ "$LINT_ERRORES" -gt 0 ] 2>/dev/null; then
+              echo "| Lint de Android reportó $LINT_ERRORES error(es) | MEDIO | Android | Ver \`android_lint.log\` / reportes XML en los artifacts |"
+            fi
+            if [ "$LINT_WARNINGS" -gt 0 ] 2>/dev/null; then
+              echo "| Lint de Android reportó $LINT_WARNINGS warning(s) | BAJO | Android | Ver \`android_lint.log\` / reportes XML en los artifacts |"
+            fi
+            if [ "$BACKEND_EXISTE" != "true" ]; then
+              echo "| No se encontró \`go.mod\`: no se pudo auditar el backend | MEDIO | Estructura del repo | Verificar ubicación real del código Go |"
+            fi
+            if [ "$ANDROID_EXISTE" != "true" ]; then
+              echo "| No se encontró ningún \`gradlew\`: no se pudo auditar Android | BAJO | Estructura del repo | Verificar ubicación real del proyecto Android, si existe |"
+            fi
+            echo ""
+            echo "---"
+            echo ""
+            echo "## 5. Recomendaciones"
+            echo ""
+            echo "- Revisar y corregir cualquier hallazgo CRÍTICO antes de cualquier despliegue a producción."
+            echo "- Si gitleaks encontró secretos, rotarlos inmediatamente (no basta con eliminarlos del código; deben invalidarse en el proveedor correspondiente) y revisar el historial de git."
+            echo "- Priorizar vulnerabilidades reportadas por \`govulncheck\` que afecten funciones realmente invocadas por el código (no solo dependencias transitivas sin uso)."
+            echo "- Mantener \`go.sum\` y dependencias de Gradle actualizadas periódicamente."
+            echo "- Ejecutar esta auditoría en cada rama antes de fusionar cambios importantes."
+            echo ""
+            echo "---"
+            echo ""
+            echo "## 6. Archivos de evidencia (adjuntos en el artifact)"
+            echo ""
+            echo "- \`go_build.log\`, \`go_vet.log\`, \`go_test.log\`, \`govulncheck.log\`, \`go_dependencias.log\`"
+            echo "- \`android_lint.log\`, reportes XML de lint (si aplica)"
+            echo "- \`gitleaks.log\`, \`gitleaks-report.json\`"
+          } > AUDIT_REPORT.md
+
+          cp AUDIT_REPORT.md audit-artifacts/AUDIT_REPORT.md
+          cat AUDIT_REPORT.md
+
+      - name: Mostrar informe en el resumen de la ejecución
+        if: always()
+        run: cat AUDIT_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Subir AUDIT_REPORT.md y evidencias como artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report-korzadivpn
+          path: |
+            AUDIT_REPORT.md
+            audit-artifacts/
+          retention-days: 30
+EOF
