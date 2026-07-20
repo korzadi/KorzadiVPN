@@ -1,19 +1,42 @@
 package com.korzadi.vpn.vpn
 
-import android.net.VpnService
 import android.content.Intent
-import android.os.ParcelFileDescriptor
+import android.net.VpnService
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class KorzadiVpnService : VpnService() {
-    private var vpnInterface: ParcelFileDescriptor? = null
+
+    @Inject
+    lateinit var wireGuardManager: WireGuardManager
+
+    companion object {
+        const val ACTION_CONNECT = "com.korzadi.vpn.ACTION_CONNECT"
+        const val ACTION_DISCONNECT = "com.korzadi.vpn.ACTION_DISCONNECT"
+        const val EXTRA_CONFIG = "extra_config"
+        const val EXTRA_NAME = "extra_name"
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Implement VPN setup using WireGuard config
+        when (intent?.action) {
+            ACTION_CONNECT -> {
+                val config = intent.getStringExtra(EXTRA_CONFIG)
+                val name = intent.getStringExtra(EXTRA_NAME)
+                if (config != null && name != null) {
+                    wireGuardManager.startTunnel(config, name)
+                }
+            }
+            ACTION_DISCONNECT -> {
+                wireGuardManager.stopTunnel()
+                stopSelf()
+            }
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
-        vpnInterface?.close()
+        wireGuardManager.stopTunnel()
         super.onDestroy()
     }
 }

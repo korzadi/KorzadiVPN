@@ -4,14 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.korzadi.vpn.ui.LoginScreen
+import com.korzadi.vpn.ui.RegisterScreen
+import com.korzadi.vpn.ui.VPNMainScreen
 import com.korzadi.vpn.viewmodel.VPNViewModel
-import com.korzadi.vpn.vpn.WireGuardManager
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -22,27 +23,24 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val state by viewModel.connectionState.collectAsState()
+            val navController = rememberNavController()
+            val isAuthenticated by viewModel.isAuthenticated.collectAsState()
             
             MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = "Estado: ${state.name}", style = MaterialTheme.typography.headlineMedium)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Button(onClick = { 
-                            if (state == WireGuardManager.ConnectionState.CONNECTED) {
-                                viewModel.disconnect()
-                            } else {
-                                viewModel.connect("user", "pass") // Simplified for demo logic
-                            }
-                        }) {
-                            Text(text = if (state == WireGuardManager.ConnectionState.CONNECTED) "Desconectar" else "Conectar")
-                        }
+                NavHost(navController = navController, startDestination = if (isAuthenticated) "vpn" else "login") {
+                    composable("login") {
+                        LoginScreen(viewModel, 
+                            onNavigateToRegister = { navController.navigate("register") }, 
+                            onLoginSuccess = { navController.navigate("vpn") { popUpTo("login") { inclusive = true } } }
+                        )
+                    }
+                    composable("register") {
+                        RegisterScreen(viewModel, 
+                            onRegisterSuccess = { navController.navigate("login") { popUpTo("register") { inclusive = true } } }
+                        )
+                    }
+                    composable("vpn") {
+                        VPNMainScreen(viewModel)
                     }
                 }
             }

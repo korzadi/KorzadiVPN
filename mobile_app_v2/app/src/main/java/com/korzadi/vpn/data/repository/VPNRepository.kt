@@ -2,6 +2,7 @@ package com.korzadi.vpn.data.repository
 
 import com.korzadi.vpn.data.api.AuthInterceptor
 import com.korzadi.vpn.data.api.KorzadiApi
+import com.korzadi.vpn.data.local.TokenManager
 import com.korzadi.vpn.data.model.LoginRequest
 import com.korzadi.vpn.data.model.VpnProfile
 import com.korzadi.vpn.data.model.WireGuardConfig
@@ -11,13 +12,24 @@ import javax.inject.Singleton
 @Singleton
 class VPNRepository @Inject constructor(
     private val api: KorzadiApi,
-    private val authInterceptor: AuthInterceptor
+    private val authInterceptor: AuthInterceptor,
+    private val tokenManager: TokenManager
 ) {
     suspend fun login(username: String, password: String): Boolean {
         return try {
             val response = api.login(LoginRequest(username, password))
             authInterceptor.token = response.token
+            tokenManager.saveToken(response.token)
             true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun register(username: String, email: String, password: String): Boolean {
+        return try {
+            val response = api.register(RegisterRequest(username, email, password))
+            response.success
         } catch (e: Exception) {
             false
         }

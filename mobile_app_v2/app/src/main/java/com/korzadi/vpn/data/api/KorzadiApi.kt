@@ -12,6 +12,9 @@ interface KorzadiApi {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
+    @POST("/api/register")
+    suspend fun register(@Body request: RegisterRequest): RegisterResponse
+
     @GET("/api/vpn/profile")
     suspend fun getVpnProfile(): VpnProfile
 
