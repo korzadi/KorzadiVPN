@@ -3,6 +3,7 @@
     package="com.korzadi.vpn">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
+        android:name=".KorzadiVPNApp"
         android:allowBackup="true"
         android:label="KorzadiVPN"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
@@ -13,5 +14,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".vpn.KorzadiVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
