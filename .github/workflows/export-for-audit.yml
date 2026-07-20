@@ -1,0 +1,111 @@
+name: Export Source for Audit
+
+# Se ejecuta manualmente desde la pestaña "Actions" de GitHub (botón "Run workflow").
+# Genera un .zip SOLO con código fuente real (sin node_modules, sin .git,
+# sin binarios compilados, sin backups), listo para subir a Claude u otra
+# herramienta de auditoría externa.
+
+on:
+  workflow_dispatch:
+    inputs:
+      incluir_frontend:
+        description: "Incluir carpeta frontend/ (React)"
+        type: boolean
+        default: true
+      incluir_mobile_v2:
+        description: "Incluir mobile_app_v2/ (Android/Kotlin activo)"
+        type: boolean
+        default: true
+      incluir_mobile_legacy:
+        description: "Incluir mobile/android/ (cliente Java legado)"
+        type: boolean
+        default: false
+      incluir_backup:
+        description: "Incluir client_backup_pre_restore/ (backup congelado)"
+        type: boolean
+        default: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Construir paquete de auditoría
+        run: |
+          set -euo pipefail
+          STAGE="audit-package"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+
+          # --- Backend Go (siempre) ---
+          rsync -a \
+            --exclude='.git' \
+            cmd internal pkg config tools \
+            go.mod go.sum \
+            Dockerfile docker-compose.yml \
+            "$STAGE"/ 2>/dev/null || true
+
+          # Copiar sueltos que existan en la raíz (ignora los que falten)
+          for f in README.md DOCUMENTACION_FINAL.md .env.example korzadivpn.service; do
+            [ -f "$f" ] && cp "$f" "$STAGE"/ || true
+          done
+
+          mkdir -p "$STAGE/.github/workflows"
+          cp -r .github/workflows/*.yml "$STAGE/.github/workflows/" 2>/dev/null || true
+
+          # --- Frontend (opcional) ---
+          if [ "${{ inputs.incluir_frontend }}" = "true" ] && [ -d frontend ]; then
+            mkdir -p "$STAGE/frontend"
+            rsync -a \
+              --exclude='node_modules' \
+              --exclude='dist' \
+              --exclude='.vite' \
+              frontend/ "$STAGE/frontend/"
+          fi
+
+          # --- Android activo (opcional, recomendado) ---
+          if [ "${{ inputs.incluir_mobile_v2 }}" = "true" ] && [ -d mobile_app_v2 ]; then
+            mkdir -p "$STAGE/mobile_app_v2"
+            rsync -a \
+              --exclude='build' \
+              --exclude='.gradle' \
+              --exclude='*.jar' \
+              --exclude='local.properties' \
+              mobile_app_v2/ "$STAGE/mobile_app_v2/"
+          fi
+
+          # --- Android legado (opcional) ---
+          if [ "${{ inputs.incluir_mobile_legacy }}" = "true" ] && [ -d mobile/android ]; then
+            mkdir -p "$STAGE/mobile/android"
+            rsync -a mobile/android/ "$STAGE/mobile/android/"
+          fi
+
+          # --- Backup congelado (opcional, normalmente NO se necesita) ---
+          if [ "${{ inputs.incluir_backup }}" = "true" ] && [ -d client_backup_pre_restore ]; then
+            mkdir -p "$STAGE/client_backup_pre_restore"
+            rsync -a \
+              --exclude='build' \
+              --exclude='.gradle' \
+              client_backup_pre_restore/ "$STAGE/client_backup_pre_restore/"
+          fi
+
+          # Quitar binarios/objetos que se hayan colado por error
+          find "$STAGE" -type f \( -name '*.jar' -o -name '*.class' -o -name '*.so' -o -name '*.exe' \) -delete || true
+
+          # Reporte de qué se incluyó (para verificar antes de subir)
+          find "$STAGE" -type f | sort > "$STAGE"_contenido.txt
+          du -sh "$STAGE" || true
+
+          zip -r korzadivpn-source-for-audit.zip "$STAGE" > /dev/null
+          zip korzadivpn-source-for-audit.zip "$STAGE"_contenido.txt > /dev/null
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: korzadivpn-source-for-audit
+          path: korzadivpn-source-for-audit.zip
+          retention-days: 7

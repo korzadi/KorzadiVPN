@@ -1,0 +1,41 @@
+name: Build KorzadiVPN Backend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Install GCC
+        run: |
+          sudo apt update
+          sudo apt install -y gcc
+
+      - name: Build Linux AMD64
+        env:
+          CGO_ENABLED: 1
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build -o korzadivpn_prod ./cmd/korzadivpn
+
+      - name: Verify binary
+        run: |
+          file korzadivpn_prod
+          sha256sum korzadivpn_prod
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: korzadivpn-prod-linux-amd64
+          path: korzadivpn_prod
