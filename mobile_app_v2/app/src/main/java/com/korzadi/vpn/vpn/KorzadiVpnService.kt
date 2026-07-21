@@ -48,7 +48,7 @@ class KorzadiVpnService : VpnService() {
             ?: return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setContentTitle("KorzadiVPN")
                 .setContentText("Túnel activo")
-                .setSmallIcon(android.R.drawable.stat_sys_data_fully_connected)
+                .setSmallIcon(android.R.drawable.ic_lock_lock)
                 .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -63,7 +63,7 @@ class KorzadiVpnService : VpnService() {
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle("KorzadiVPN")
             .setContentText("Túnel activo")
-            .setSmallIcon(android.R.drawable.stat_sys_data_fully_connected)
+            .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
