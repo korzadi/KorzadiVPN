@@ -1,17 +1,28 @@
 package com.korzadi.vpn.data.api
 
+import com.korzadi.vpn.data.local.TokenManager
 import okhttp3.Interceptor
 import okhttp3.Response
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AuthInterceptor : Interceptor {
-    var token: String? = null
+@Singleton
+class AuthInterceptor @Inject constructor(
+    private val tokenManager: TokenManager
+) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val originalRequest = chain.request()
-        val requestBuilder = originalRequest.newBuilder()
 
-        token?.let {
-            requestBuilder.addHeader("Authorization", "Bearer $it")
+        val token = tokenManager.getToken()
+
+        val requestBuilder = chain.request()
+            .newBuilder()
+
+        if (!token.isNullOrEmpty()) {
+            requestBuilder.addHeader(
+                "Authorization",
+                "Bearer $token"
+            )
         }
 
         return chain.proceed(requestBuilder.build())
