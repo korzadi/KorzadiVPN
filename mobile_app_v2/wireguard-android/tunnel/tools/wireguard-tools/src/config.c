@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0 OR MIT
 /*
- * Copyright (C) 2015-2026 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2020 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include <arpa/inet.h>
@@ -506,9 +506,8 @@ error:
 bool config_read_line(struct config_ctx *ctx, const char *input)
 {
 	size_t len, cleaned_len = 0;
-	const char *comment;
+	char *line, *comment;
 	bool ret = true;
-	char *line;
 
 	/* This is what strchrnul is for, but that isn't portable. */
 	comment = strchr(input, COMMENT_CHAR);

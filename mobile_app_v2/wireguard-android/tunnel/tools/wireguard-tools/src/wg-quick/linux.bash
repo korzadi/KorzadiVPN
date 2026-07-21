@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (C) 2015-2026 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+# Copyright (C) 2015-2020 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 #
 
 set -e -o pipefail
@@ -51,7 +51,6 @@ parse_options() {
 		stripped="${line%%\#*}"
 		key="${stripped%%=*}"; key="${key##*([[:space:]])}"; key="${key%%*([[:space:]])}"
 		value="${stripped#*=}"; value="${value##*([[:space:]])}"; value="${value%%*([[:space:]])}"
-		unstripped_value="${line#*=}"; unstripped_value="${unstripped_value##*([[:space:]])}"; unstripped_value="${unstripped_value%%*([[:space:]])}"
 		[[ $key == "["* ]] && interface_section=0
 		[[ $key == "[Interface]" ]] && interface_section=1
 		if [[ $interface_section -eq 1 ]]; then
@@ -62,10 +61,10 @@ parse_options() {
 				[[ $v =~ (^[0-9.]+$)|(^.*:.*$) ]] && DNS+=( $v ) || DNS_SEARCH+=( $v )
 			done; continue ;;
 			Table) TABLE="$value"; continue ;;
-			PreUp) PRE_UP+=( "$unstripped_value" ); continue ;;
-			PreDown) PRE_DOWN+=( "$unstripped_value" ); continue ;;
-			PostUp) POST_UP+=( "$unstripped_value" ); continue ;;
-			PostDown) POST_DOWN+=( "$unstripped_value" ); continue ;;
+			PreUp) PRE_UP+=( "$value" ); continue ;;
+			PreDown) PRE_DOWN+=( "$value" ); continue ;;
+			PostUp) POST_UP+=( "$value" ); continue ;;
+			PostDown) POST_DOWN+=( "$value" ); continue ;;
 			SaveConfig) read_bool SAVE_CONFIG "$value"; continue ;;
 			esac
 		fi
@@ -124,7 +123,7 @@ add_addr() {
 }
 
 set_mtu_up() {
-	local mtu=2147483647 endpoint output
+	local mtu=0 endpoint output
 	if [[ -n $MTU ]]; then
 		cmd ip link set mtu "$MTU" up dev "$INTERFACE"
 		return
@@ -132,18 +131,18 @@ set_mtu_up() {
 	while read -r _ endpoint; do
 		[[ $endpoint =~ ^\[?([a-z0-9:.]+)\]?:[0-9]+$ ]] || continue
 		output="$(ip route get "${BASH_REMATCH[1]}" || true)"
-		[[ ( $output =~ mtu\ ([0-9]+) || ( $output =~ dev\ ([^ ]+) && $(ip link show dev "${BASH_REMATCH[1]}") =~ mtu\ ([0-9]+) ) ) && ${BASH_REMATCH[1]} -lt $mtu ]] && mtu="${BASH_REMATCH[1]}"
+		[[ ( $output =~ mtu\ ([0-9]+) || ( $output =~ dev\ ([^ ]+) && $(ip link show dev "${BASH_REMATCH[1]}") =~ mtu\ ([0-9]+) ) ) && ${BASH_REMATCH[1]} -gt $mtu ]] && mtu="${BASH_REMATCH[1]}"
 	done < <(wg show "$INTERFACE" endpoints)
-	if [[ $mtu -eq 2147483647 ]]; then
+	if [[ $mtu -eq 0 ]]; then
 		read -r output < <(ip route show default || true) || true
-		[[ ( $output =~ mtu\ ([0-9]+) || ( $output =~ dev\ ([^ ]+) && $(ip link show dev "${BASH_REMATCH[1]}") =~ mtu\ ([0-9]+) ) ) && ${BASH_REMATCH[1]} -lt $mtu ]] && mtu="${BASH_REMATCH[1]}"
+		[[ ( $output =~ mtu\ ([0-9]+) || ( $output =~ dev\ ([^ ]+) && $(ip link show dev "${BASH_REMATCH[1]}") =~ mtu\ ([0-9]+) ) ) && ${BASH_REMATCH[1]} -gt $mtu ]] && mtu="${BASH_REMATCH[1]}"
 	fi
-	[[ $mtu -gt 0 && $mtu -lt 2147483647 ]] || mtu=1500
+	[[ $mtu -gt 0 ]] || mtu=1500
 	cmd ip link set mtu $(( mtu - 80 )) up dev "$INTERFACE"
 }
 
 resolvconf_iface_prefix() {
-	[[ -f /etc/resolvconf/interface-order && ! -L $(type -P resolvconf) ]] || return 0
+	[[ -f /etc/resolvconf/interface-order ]] || return 0
 	local iface
 	while read -r iface; do
 		[[ $iface =~ ^([A-Za-z0-9-]+)\*$ ]] || continue
@@ -238,7 +237,7 @@ add_default() {
 	printf -v restore '%sCOMMIT\n*mangle\n-I POSTROUTING -m mark --mark %d -p udp -j CONNMARK --save-mark %s\n-I PREROUTING -p udp -j CONNMARK --restore-mark %s\nCOMMIT\n' "$restore" $table "$marker" "$marker"
 	printf -v nftcmd '%sadd rule %s %s postmangle meta l4proto udp mark %d ct mark set mark \n' "$nftcmd" "$pf" "$nftable" $table
 	printf -v nftcmd '%sadd rule %s %s premangle meta l4proto udp meta mark set ct mark \n' "$nftcmd" "$pf" "$nftable"
-	[[ $proto == -4 ]] && [[ $(sysctl -n net.ipv4.conf.all.src_valid_mark) -ne 1 ]] && cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1
+	[[ $proto == -4 ]] && cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1
 	if type -p nft >/dev/null; then
 		cmd nft -f <(echo -n "$nftcmd")
 	else
@@ -249,7 +248,7 @@ add_default() {
 }
 
 set_config() {
-	cmd wg addconf "$INTERFACE" <(echo "$WG_CONFIG")
+	cmd wg setconf "$INTERFACE" <(echo "$WG_CONFIG")
 }
 
 save_config() {

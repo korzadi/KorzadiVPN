@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 /*
- * Copyright (C) 2015-2026 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2021 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  */
 
@@ -307,8 +307,11 @@ static int kernel_set_device(struct wgdevice *dev)
 			nvl_aips[j] = nvlist_create(0);
 			if (!nvl_aips[j])
 				goto err_peer;
-			if (aip->flags)
-				nvlist_add_number(nvl_aips[j], "flags", aip->flags);
+			if (aip->flags) {
+				//TODO: implement me
+				ret = -EOPNOTSUPP;
+				goto err_peer;
+			}
 			nvlist_add_number(nvl_aips[j], "cidr", aip->cidr);
 			if (aip->family == AF_INET)
 				nvlist_add_binary(nvl_aips[j], "ipv4", &aip->ip4, sizeof(aip->ip4));
