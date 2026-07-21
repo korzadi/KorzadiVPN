@@ -15,35 +15,33 @@ class WireGuardManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
+    enum class ConnectionState {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED,
+        ERROR
+    }
+
     private val backend: Backend = GoBackend(context)
 
     private var activeTunnel: Tunnel? = null
 
-    private val tunnel = object : Tunnel {
-
-        override fun getName(): String {
-            return "korzadi"
-        }
-
-        override fun onStateChange(newState: Tunnel.State) {
-        }
-    }
-
-
-    fun startTunnel(configText: String) {
-
+    fun startTunnel(config: String, name: String) {
         try {
+            val tunnel = object : Tunnel {
+                override fun getName(): String = name
 
-            val config = Config.parse(
-                ByteArrayInputStream(
-                    configText.toByteArray()
-                )
+                override fun onStateChange(newState: Tunnel.State) {}
+            }
+
+            val parsedConfig = Config.parse(
+                ByteArrayInputStream(config.toByteArray())
             )
 
             backend.setState(
                 tunnel,
                 Tunnel.State.UP,
-                config
+                parsedConfig
             )
 
             activeTunnel = tunnel
@@ -53,19 +51,14 @@ class WireGuardManager @Inject constructor(
         }
     }
 
-
     fun stopTunnel() {
-
         try {
-
             activeTunnel?.let {
-
                 backend.setState(
                     it,
                     Tunnel.State.DOWN,
                     null
                 )
-
             }
 
             activeTunnel = null
