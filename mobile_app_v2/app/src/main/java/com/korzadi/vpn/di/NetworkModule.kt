@@ -2,6 +2,7 @@ package com.korzadi.vpn.di
 
 import com.korzadi.vpn.data.api.AuthInterceptor
 import com.korzadi.vpn.data.api.KorzadiApi
+import com.korzadi.vpn.data.local.TokenManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,11 +18,17 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(): AuthInterceptor = AuthInterceptor()
+    fun provideAuthInterceptor(
+        tokenManager: TokenManager
+    ): AuthInterceptor {
+        return AuthInterceptor(tokenManager)
+    }
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .build()
@@ -29,9 +36,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(
+        okHttpClient: OkHttpClient
+    ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.korzadivpn.com") // Replace with actual base URL
+            .baseUrl("https://vpn.korzadi.com/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -39,7 +48,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideKorzadiApi(retrofit: Retrofit): KorzadiApi {
+    fun provideKorzadiApi(
+        retrofit: Retrofit
+    ): KorzadiApi {
         return retrofit.create(KorzadiApi::class.java)
     }
 }
